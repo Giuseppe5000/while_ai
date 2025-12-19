@@ -88,7 +88,6 @@ static void parser_print_ast_impl(AST_Node *node, int indent) {
         }
 
         parser_print_ast_impl(node->as.child.left, indent + 2);
-        if (node->type == NODE_IF) printf("%*selse\n", indent, "");
         if (node->type != NODE_WHILE) parser_print_ast_impl(node->as.child.right, indent + 2);
     }
 }
@@ -310,7 +309,9 @@ static AST_Node *parse_atom_stmt(Parser *parser) {
         /* S2 */
         if_node->as.child.right = parse_stmt(parser);
 
-        /* TODO: there must be something to signal the end of the if (like fi or using parentheses), same for the while */
+        /* Fi symbol */
+        t = lex_next(parser->lex);
+        expect(t, TOKEN_FI);
 
         return if_node;
     }
@@ -328,6 +329,10 @@ static AST_Node *parse_atom_stmt(Parser *parser) {
 
         /* S */
         while_node->as.child.left = parse_stmt(parser);
+
+        /* Done symbol */
+        t = lex_next(parser->lex);
+        expect(t, TOKEN_DONE);
 
         return while_node;
     }
