@@ -18,9 +18,25 @@ Parser *parser_init(const char *src) {
     return parser;
 }
 
+static void free_node(AST_Node *node) {
+    if (node != NULL) {
+
+        /* Leaf nodes */
+        if (node->type == NODE_NUM || node->type == NODE_VAR || node->type == NODE_BOOL_LITERAL) {
+            free(node);
+        }
+        else {
+            free_node(node->as.child.left);
+            free_node(node->as.child.right);
+            free_node(node->as.child.condition);
+            free(node);
+        }
+    }
+}
+
 void parser_free(Parser *parser) {
     lex_free(parser->lex);
-    /* TODO: free AST */
+    free_node(parser->root);
     free(parser);
 }
 
