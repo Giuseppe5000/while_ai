@@ -1,6 +1,7 @@
 #ifndef WHILE_AI_PARSER_
 #define WHILE_AI_PARSER_
 
+#include "lexer.h"
 #include <stddef.h>
 #include <stdint.h>
 #include <stdbool.h>
@@ -79,9 +80,9 @@ struct AST_Node {
 Parse the program according to the grammar.
 Returns the root node of the AST.
 */
-AST_node *parser_init(Lexer *lex);
+AST_Node *parser_init(Lexer *lex);
 
 /* Free the AST */
-void parser_free(AST_node *root);
+void parser_free(AST_Node *root);
 
 #endif /* WHILE_AI_PARSER_ */
