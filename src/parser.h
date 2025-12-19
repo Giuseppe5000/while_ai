@@ -57,11 +57,15 @@ typedef struct AST_Node AST_Node;
 
 struct AST_Node {
     enum Node_type type;
-    AST_Node *left;
-    AST_Node *right;
-
-    /* Leaf node attributes */
     union {
+        /* Inner node attributes */
+        struct {
+            AST_Node *left;
+            AST_Node *right;
+            AST_Node *condition; /* Used for while and if condition */
+        } children;
+
+        /* Leaf node attributes */
         struct {
             const char *str;
             size_t len;
@@ -70,5 +74,14 @@ struct AST_Node {
         bool boolean;
     } as;
 };
+
+/*
+Parse the program according to the grammar.
+Returns the root node of the AST.
+*/
+AST_node *parser_init(Lexer *lex);
+
+/* Free the AST */
+void parser_free(AST_node *root);
 
 #endif /* WHILE_AI_PARSER_ */
