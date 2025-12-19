@@ -56,6 +56,9 @@ Lexer *lex_init(const char *src);
 /* Get next token */
 Token lex_next(Lexer *lex);
 
+/* Get next token, without consuming it */
+Token lex_peek(Lexer *lex);
+
 /* Free the lexer */
 void lex_free(Lexer *lex);
 

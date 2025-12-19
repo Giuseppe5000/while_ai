@@ -132,6 +132,15 @@ Token lex_next(Lexer *lex) {
     assert(0 && "UNREACHABLE");
 }
 
+Token lex_peek(Lexer *lex) {
+    /* Get token and then rewind the cursor */
+    const char *cursor = lex->cursor;
+    Token t = lex_next(lex);
+    lex->cursor = cursor;
+
+    return t;
+}
+
 void lex_free(Lexer *lex) {
     free(lex);
 }
