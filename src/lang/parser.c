@@ -39,7 +39,7 @@ void parser_free(Parser *parser) {
     free(parser);
 }
 
-static void parser_print_ast_impl(AST_Node *node, int indent) {
+static void parser_print_ast_impl(const AST_Node *node, int indent) {
     if (node->type == NODE_NUM) {
         printf("%*s%d\n", indent, "", node->as.num);
     }
@@ -107,7 +107,7 @@ static void parser_print_ast_impl(AST_Node *node, int indent) {
     }
 }
 
-void parser_print_ast(AST_Node *node) {
+void parser_print_ast(const AST_Node *node) {
     parser_print_ast_impl(node, 0);
 }
 

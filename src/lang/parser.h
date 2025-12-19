@@ -87,7 +87,7 @@ Returns the root node of the AST.
 */
 AST_Node *parser_parse(Parser *parser);
 
-void parser_print_ast(AST_Node *node);
+void parser_print_ast(const AST_Node *node);
 
 /* Free the Parser and the AST */
 void parser_free(Parser *parser);
