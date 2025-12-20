@@ -28,8 +28,9 @@ statements:
 ```
 
 ## TODO
-- [ ] Lexing doesn't tokenize negative numbers (-x).
-- [ ] Check if the CFG struct is good for the fixpoint computation.
-- [ ] Implement `cfg_init` for getting the CFG from the AST.
+- [x] Check if the CFG struct is good for the fixpoint computation.
+- [x] Implement the functions for getting the CFG from the AST.
+- [ ] Lexer doesn't tokenize negative numbers (-x).
+- [ ] Refactor the lexer/parser/cfg, with better comments and making the code/interface cohesive.
 - [ ] Implement the abstract domain and all the operations in a standalone module.
 - [ ] Wire the CFG with an abstract state and do the fixpoint computation.
