@@ -3,7 +3,8 @@
 
 #include <stddef.h>
 
-/* Malloc but exit on OOM */
+/* Same as originals but exits on OOM */
 void *xmalloc(size_t size);
+void *xrealloc(void *ptr, size_t size);
 
 #endif /* WHILE_AI_UTILS_ */

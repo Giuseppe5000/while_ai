@@ -1,10 +1,12 @@
 if true then
-  x := 1;
-  skip
-else
-  if true then
-     x := 1
-  else
-     z := 1
-   fi
-fi
+    if true then
+        if true then
+            if true then
+                if true then
+                    skip
+                else skip fi
+            else skip fi
+        else skip fi
+    else skip fi
+else skip fi;
+target := 10
