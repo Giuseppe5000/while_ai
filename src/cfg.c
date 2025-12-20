@@ -45,6 +45,35 @@ static size_t count_nodes(AST_Node *node, size_t counter) {
     return counter;
 }
 
+/* ================================ Predecessor stack ================================= */
+typedef struct {
+    size_t *data;
+    size_t count;
+    size_t capacity;
+} Pred_Stack;
+
+void pred_stack_push(Pred_Stack *s, size_t pred) {
+    if (s->count >= s->capacity) {
+        /* Grow the dynamic array */
+        if (s->capacity == 0) {
+            s->capacity = 8;
+        } else {
+            s->capacity *= 2;
+        }
+        s->data = xrealloc(s->data, s->capacity*sizeof(size_t));
+    }
+    s->data[s->count++] = pred;
+}
+
+size_t pred_stack_pop(Pred_Stack *s) {
+    if (s->count > 0) {
+        s->count--;
+        return s->data[s->count];
+    }
+    fprintf(stderr, "[ERROR]: Trying to pop from empty stack\n");
+    exit(1);
+}
+/* ==================================================================================== */
 
 /*
 TODO: The predecessor MUST be a stack (i can use a dynamic arrat), because
