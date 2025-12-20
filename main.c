@@ -19,7 +19,7 @@ int main(void) {
     fseek(fp, 0, SEEK_SET);
 
     /* Copy the text in a buffer */
-    char *src = malloc(file_size*sizeof(char));
+    char *src = malloc((file_size + 1)*sizeof(char));
     if (src == NULL) {
         fprintf(stderr, "[ERROR]: OOM when allocating %zu bytes.\n", (file_size + 1)*sizeof(char));
         exit(1);

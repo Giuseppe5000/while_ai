@@ -142,13 +142,14 @@ static void build_cfg_impl(CFG *cfg, AST_Node *node, size_t *counter, Pred_Stack
         *counter += 1;
 
         /* Build the two branch, saving the predecessors */
-
         build_cfg_impl(cfg, node->as.child.left, counter, preds);
         Pred_Stack preds_then_branch = {0};
         while (preds->count != 0) {
             pred_stack_push(&preds_then_branch, pred_stack_pop(preds));
         }
+
         pred_stack_push(preds, if_cond);
+
         build_cfg_impl(cfg, node->as.child.right, counter, preds);
         Pred_Stack preds_else_branch = {0};
         while (preds->count != 0) {
@@ -159,7 +160,6 @@ static void build_cfg_impl(CFG *cfg, AST_Node *node, size_t *counter, Pred_Stack
         while (preds_then_branch.count != 0) {
             pred_stack_push(preds, pred_stack_pop(&preds_then_branch));
         }
-
         while (preds_else_branch.count != 0) {
             pred_stack_push(preds, pred_stack_pop(&preds_else_branch));
         }
