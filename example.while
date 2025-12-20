@@ -6,4 +6,13 @@ while true do
   done;
   x := 1
 done;
-z := x / y + y
+z := x / y + y;
+
+if true then
+  x := 2;
+  y := 3;
+  x := 10
+else
+  y := 1
+fi;
+ciao := 1

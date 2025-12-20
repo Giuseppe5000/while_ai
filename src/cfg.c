@@ -60,17 +60,20 @@ static void build_cfg_impl(CFG *cfg, AST_Node *node, size_t *counter, int *pred)
         cfg->nodes[*counter].edges[0].as.assign = node;
 
         /* If there is a predecessor node we need to wire an edge to this new node */
-        if (*pred >= 0) {
-            size_t prev_node_edge_count = cfg->nodes[*pred].edge_count;
-            if (prev_node_edge_count == 2) {
-                assert(0 && "UNREACHABLE");
-            }
+        for (size_t i = 0; i < 2; ++i) {
+            if (pred[i] >= 0) {
+                size_t prev_node_edge_count = cfg->nodes[pred[i]].edge_count;
+                if (prev_node_edge_count == 2) {
+                    assert(0 && "UNREACHABLE");
+                }
 
-            cfg->nodes[*pred].edges[prev_node_edge_count].dst = *counter;
-            cfg->nodes[*pred].edge_count++;
+                cfg->nodes[pred[i]].edges[prev_node_edge_count].dst = *counter;
+                cfg->nodes[pred[i]].edge_count++;
+            }
         }
 
-        *pred = *counter;
+        pred[0] = *counter;
+        pred[1] = -1;
         *counter += 1;
         break;
     case NODE_SEQ:
@@ -78,11 +81,52 @@ static void build_cfg_impl(CFG *cfg, AST_Node *node, size_t *counter, int *pred)
         build_cfg_impl(cfg, node->as.child.right, counter, pred);
         break;
     case NODE_IF:
-        // printf("if (P%zu) b then\n", counter++);
-        // counter = build_cfg_impl(cfg, node->as.child.left, counter);
-        // printf("(P%zu) else\n", counter++);
-        // counter = build_cfg_impl(cfg, node->as.child.right, counter);
-        // printf("fi\n");
+        /* If node */
+        cfg->nodes[*counter] = build_node(*counter);
+
+        cfg->nodes[*counter].edges[0].src = *counter;
+        cfg->nodes[*counter].edges[0].dst = -1;
+        cfg->nodes[*counter].edges[0].type = EDGE_GUARD;
+        cfg->nodes[*counter].edges[0].as.guard.condition = node->as.child.condition;
+        cfg->nodes[*counter].edges[0].as.guard.val = true;
+
+        cfg->nodes[*counter].edges[1].src = *counter;
+        cfg->nodes[*counter].edges[1].dst = -1;
+        cfg->nodes[*counter].edges[1].type = EDGE_GUARD;
+        cfg->nodes[*counter].edges[1].as.guard.condition = node->as.child.condition;
+        cfg->nodes[*counter].edges[1].as.guard.val = false;
+
+        /* If there is a predecessor node we need to wire an edge to this new node */
+        for (size_t i = 0; i < 2; ++i) {
+            if (pred[i] >= 0) {
+                size_t prev_node_edge_count = cfg->nodes[pred[i]].edge_count;
+                if (prev_node_edge_count == 2) {
+                    assert(0 && "UNREACHABLE");
+                }
+
+                cfg->nodes[pred[i]].edges[prev_node_edge_count].dst = *counter;
+                cfg->nodes[pred[i]].edge_count++;
+            }
+        }
+
+        const size_t if_cond = *counter;
+        pred[0] = *counter;
+        pred[1] = -1;
+
+        *counter += 1;
+
+        build_cfg_impl(cfg, node->as.child.left, counter, pred);
+        const size_t then_pred = pred[0];
+
+        pred[0] = if_cond;
+        pred[1] = -1;
+        build_cfg_impl(cfg, node->as.child.right, counter, pred);
+        const size_t else_pred = pred[0];
+
+        /* If end node */
+        pred[0] = then_pred;
+        pred[1] = else_pred;
+
         break;
     case NODE_WHILE:
         /* Loop invariant Node */
@@ -91,38 +135,46 @@ static void build_cfg_impl(CFG *cfg, AST_Node *node, size_t *counter, int *pred)
         cfg->nodes[*counter].edges[0].src = *counter;
         cfg->nodes[*counter].edges[0].dst = -1;
         cfg->nodes[*counter].edges[0].type = EDGE_GUARD;
-        cfg->nodes[*counter].edges[0].as.guard.condition = node;
+        cfg->nodes[*counter].edges[0].as.guard.condition = node->as.child.condition;
         cfg->nodes[*counter].edges[0].as.guard.val = true;
 
         cfg->nodes[*counter].edges[1].src = *counter;
         cfg->nodes[*counter].edges[1].dst = -1;
         cfg->nodes[*counter].edges[1].type = EDGE_GUARD;
-        cfg->nodes[*counter].edges[1].as.guard.condition = node;
+        cfg->nodes[*counter].edges[1].as.guard.condition = node->as.child.condition;
         cfg->nodes[*counter].edges[1].as.guard.val = false;
 
         /* If there is a predecessor node we need to wire an edge to this new node */
-        if (*pred >= 0) {
-            size_t prev_node_edge_count = cfg->nodes[*pred].edge_count;
-            if (prev_node_edge_count == 2) {
-                assert(0 && "UNREACHABLE");
-            }
+        for (size_t i = 0; i < 2; ++i) {
+            if (pred[i] >= 0) {
+                size_t prev_node_edge_count = cfg->nodes[pred[i]].edge_count;
+                if (prev_node_edge_count == 2) {
+                    assert(0 && "UNREACHABLE");
+                }
 
-            cfg->nodes[*pred].edges[prev_node_edge_count].dst = *counter;
-            cfg->nodes[*pred].edge_count++;
+                cfg->nodes[pred[i]].edges[prev_node_edge_count].dst = *counter;
+                cfg->nodes[pred[i]].edge_count++;
+            }
         }
 
         const size_t loop_inv = *counter;
-        *pred = *counter;
+        pred[0] = *counter;
+        pred[1] = -1;
         *counter += 1;
 
         build_cfg_impl(cfg, node->as.child.left, counter, pred);
 
         /* Wire the last added node (the predecessor) to the loop invariant node */
-        cfg->nodes[*pred].edges[0].dst = loop_inv;
-        cfg->nodes[*pred].edge_count++;
+        for (size_t i = 0; i < 2; ++i) {
+            if (pred[i] >= 0) {
+                cfg->nodes[pred[i]].edges[0].dst = loop_inv;
+                cfg->nodes[pred[i]].edge_count++;
+            }
+        }
 
         /* The predecessor of a statement after the while is the loop invariant */
-        *pred = loop_inv;
+        pred[0] = loop_inv;
+        pred[1] = -1;
         break;
     default:
         break;
@@ -131,38 +183,40 @@ static void build_cfg_impl(CFG *cfg, AST_Node *node, size_t *counter, int *pred)
 
 static void build_cfg(CFG *cfg, AST_Node *root) {
     size_t counter = 0;
-    int pred = -1;
-    build_cfg_impl(cfg, root, &counter, &pred);
+    int pred[] = {-1, -1};
+    build_cfg_impl(cfg, root, &counter, pred);
 
     /* Wire to the last node */
-    if (pred >= 0) {
-        size_t prev_node_edge_count = cfg->nodes[pred].edge_count;
-        if (prev_node_edge_count == 2) {
-            assert(0 && "UNREACHABLE");
+    for (size_t i = 0; i < 2; ++i) {
+        if (pred[i] >= 0) {
+            size_t prev_node_edge_count = cfg->nodes[pred[i]].edge_count;
+            if (prev_node_edge_count == 2) {
+                assert(0 && "UNREACHABLE");
+            }
+
+            cfg->nodes[pred[i]].edges[prev_node_edge_count].dst = counter;
+            cfg->nodes[pred[i]].edge_count++;
         }
-
-        cfg->nodes[pred].edges[prev_node_edge_count].dst = counter;
-        cfg->nodes[pred].edge_count++;
     }
-
 }
 
 void cfg_print_graphviz(CFG *cfg) {
-    printf("nodes = %zu\n", cfg->count);
     printf("digraph G {\n");
     printf("\tnode [shape=circle]\n\n");
     for (size_t i = 0; i < cfg->count; ++i) {
         CFG_Node node = cfg->nodes[i];
         for (size_t j = 0; j < node.edge_count; ++j) {
-            printf("\t%zu -> %zu", node.edges[j].src, node.edges[j].dst);
+            printf("\tP%zu -> P%zu", node.edges[j].src, node.edges[j].dst);
             switch (node.edges[j].type) {
             case EDGE_ASSIGN:
-                const char *var = node.edges[j].as.assign->as.child.left->as.var.str;
-                size_t var_len = node.edges[j].as.assign->as.child.left->as.var.len;
-                printf(" [label=\"ASSIGN %.*s\"]\n", (int)var_len, var);
-                break;
+                {
+                    const char *var = node.edges[j].as.assign->as.child.left->as.var.str;
+                    size_t var_len = node.edges[j].as.assign->as.child.left->as.var.len;
+                    printf(" [label=\"ASSIGN %.*s\"]\n", (int)var_len, var);
+                    break;
+                }
             case EDGE_GUARD:
-                printf(" [label=\"GUARD\"]\n");
+                printf(" [label=\"%s\"]\n", node.edges[j].as.guard.val ? "true" : "false");
                 break;
             default:
                 printf("\n");

@@ -30,7 +30,7 @@ int main(void) {
     fclose(fp);
 
     CFG_Ctx *cfg_ctx = cfg_init(src);
-    CFG *cfg = cfg_get(cfg_ctx);
+    cfg_get(cfg_ctx);
 
     cfg_free(cfg_ctx);
     free(src);
