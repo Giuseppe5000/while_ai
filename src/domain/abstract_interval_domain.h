@@ -1,7 +1,7 @@
 #ifndef WHILE_AI_ABSTRACT_INTERVAL_DOM_
 #define WHILE_AI_ABSTRACT_INTERVAL_DOM_
 
-#include "lang/parser.h"
+#include "../lang/parser.h"
 #include <stdint.h>
 #include <stddef.h>
 
@@ -38,8 +38,8 @@ The domain of parametric intervals is defined as the union of this sets:
 
 NOTE: m,n represents -infinite/infinite if they are INTERVAL_MIN_INF/INTERVAL_PLUS_INF.
 */
-Abstract_Int_State *abstract_int_state_init_bottom(int64_t m, int64_t n, const char **var_names)
-Abstract_Int_State *abstract_int_state_init_top(int64_t m, int64_t n, const char **var_names);
+Abstract_Int_State *abstract_int_state_init_bottom(int64_t m, int64_t n, const char **var_names, size_t var_count);
+Abstract_Int_State *abstract_int_state_init_top(int64_t m, int64_t n, const char **var_names, size_t var_count);
 
 /* Abstract commands */
 Abstract_Int_State *abstract_int_state_exec_command(const Abstract_Int_State *s, const AST_Node *command);
