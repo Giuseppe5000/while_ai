@@ -18,17 +18,81 @@ struct Interval {
 };
 
 /*
-Create an interval beloging to the domain, if a or b.
-
-NOTE: if [a, b] does not belong to the domain dom, an assertion will occurr.
+Check if interval 'i1' is a less than or equal to interval 'i2'.
+Returns true if i1 <= i2 (if i1 is contained in i2), false otherwise.
 */
-// static Interval interval_create(const Abstract_Int_State *s, int64_t a, int64_t b);x
+static bool interval_leq(Interval i1, Interval i2) {
+    if (i1.type == INTERVAL_BOTTOM && i2.type == INTERVAL_BOTTOM) {
+        return true;
+    }
+    else if (i1.type == INTERVAL_BOTTOM) {
+        return true;
+    }
+    else if (i2.type == INTERVAL_BOTTOM) {
+        return false;
+    }
+    else {
+        return i1.a >= i2.a && i1.b <= i2.b;
+    }
+}
 
 /*
-Check if interval 'a' is a less than or equal to interval 'b'.
-Returns true if a <= b, false otherwise.
+Create an interval beloging to the domain Int(m,n).
+
+NOTE: if [a, b] does not belong to the domain Top will be returned.
 */
-// static bool interval_leq(const Abstract_Int_State *s, Interval a, Interval b);
+static Interval interval_create(int64_t m, int64_t n, int64_t a, int64_t b) {
+    Interval i = {0};
+    i.type = INTERVAL_STD;
+    i.a = a;
+    i.b = b;
+
+    /* Empty interval (Bottom) */
+    if (a > b) {
+        i.type = INTERVAL_BOTTOM;
+        return i;
+    }
+
+    /* Top */
+    if (a == INTERVAL_MIN_INF && b == INTERVAL_PLUS_INF) {
+        return i;
+    }
+
+    /* { [k,k] | k ∈ Z } */
+    if (a == b) {
+        return i;
+    }
+
+    /* { [a, b] | a < b, [a, b] ⊆ [m, n] } */
+    if (a < b) {
+        Interval i_mn = {
+            .type = INTERVAL_STD,
+            .a = m,
+            .b = n,
+        };
+
+        if (interval_leq(i, i_mn)) {
+            return i;
+        }
+    }
+
+    /* { (-INF, k] | k ∈ [m, n] } */
+    if (a == INTERVAL_MIN_INF && (b >= m && b <= n)) {
+        return i;
+    }
+
+    /* { [k, +INF) | k ∈ [m, n] } */
+    if (b == INTERVAL_PLUS_INF && (a >= m && a <= n)) {
+        return i;
+    }
+
+    /* [a,b] is not in the domain, so return Top */
+    i.type = INTERVAL_STD;
+    i.a = INTERVAL_MIN_INF;
+    i.b = INTERVAL_PLUS_INF;
+    return i;
+}
+
 
 /* Returns the union of intervals 'a' and 'b' */
 // static Interval interval_union(const Abstract_Int_State *s, Interval a, Interval b);
