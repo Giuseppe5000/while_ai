@@ -6,61 +6,63 @@ void interval_create_test(void) {
     /* m,n integers */
     int64_t m = -10;
     int64_t n = 10;
+    abstract_int_set_params(m, n);
     Interval i = {0};
 
-    i = interval_create(m, n, 3, 2);
+    i = interval_create(3, 2);
     assert(i.type == INTERVAL_BOTTOM);
 
-    i = interval_create(m, n, INTERVAL_MIN_INF, INTERVAL_PLUS_INF);
+    i = interval_create(INTERVAL_MIN_INF, INTERVAL_PLUS_INF);
     assert(i.type == INTERVAL_STD);
 
-    i = interval_create(m, n, 2, 2);
+    i = interval_create(2, 2);
     assert(i.type == INTERVAL_STD && i.a == i.b && i.a == 2);
 
-    i = interval_create(m, n, -11, -11);
+    i = interval_create(-11, -11);
     assert(i.type == INTERVAL_STD && i.a == i.b && i.a == -11);
 
-    i = interval_create(m, n, 11, 11);
+    i = interval_create(11, 11);
     assert(i.type == INTERVAL_STD && i.a == i.b && i.a == 11);
 
-    i = interval_create(m, n, INTERVAL_MIN_INF, 9);
+    i = interval_create(INTERVAL_MIN_INF, 9);
     assert(i.type == INTERVAL_STD);
 
-    i = interval_create(m, n, 9, INTERVAL_PLUS_INF);
+    i = interval_create(9, INTERVAL_PLUS_INF);
     assert(i.type == INTERVAL_STD);
 
-    i = interval_create(m, n, -6, 7);
+    i = interval_create(-6, 7);
     assert(i.type == INTERVAL_STD);
 
-    i = interval_create(m, n, -20, 7);
+    i = interval_create(-20, 7);
     assert(i.type == INTERVAL_STD && i.a == INTERVAL_MIN_INF && i.b == INTERVAL_PLUS_INF);
 
     /* m,n infinite */
     m = INTERVAL_MIN_INF;
     n = INTERVAL_PLUS_INF;
+    abstract_int_set_params(m, n);
 
-    i = interval_create(m, n, 3, 2);
+    i = interval_create(3, 2);
     assert(i.type == INTERVAL_BOTTOM);
 
-    i = interval_create(m, n, INTERVAL_MIN_INF, INTERVAL_PLUS_INF);
+    i = interval_create(INTERVAL_MIN_INF, INTERVAL_PLUS_INF);
     assert(i.type == INTERVAL_STD);
 
-    i = interval_create(m, n, 2, 2);
+    i = interval_create(2, 2);
     assert(i.type == INTERVAL_STD && i.a == i.b && i.a == 2);
 
-    i = interval_create(m, n, -11, -11);
+    i = interval_create(-11, -11);
     assert(i.type == INTERVAL_STD && i.a == i.b && i.a == -11);
 
-    i = interval_create(m, n, 11, 11);
+    i = interval_create(11, 11);
     assert(i.type == INTERVAL_STD && i.a == i.b && i.a == 11);
 
-    i = interval_create(m, n, INTERVAL_MIN_INF, 9);
+    i = interval_create(INTERVAL_MIN_INF, 9);
     assert(i.type == INTERVAL_STD);
 
-    i = interval_create(m, n, 9, INTERVAL_PLUS_INF);
+    i = interval_create(9, INTERVAL_PLUS_INF);
     assert(i.type == INTERVAL_STD);
 
-    i = interval_create(m, n, -6, 7);
+    i = interval_create(-6, 7);
     assert(i.type == INTERVAL_STD);
 }
 
@@ -103,7 +105,6 @@ void interval_leq_test(void) {
     i2.type = INTERVAL_BOTTOM;
     assert(interval_leq(i1, i2) == false);
 }
-
 
 int main(void) {
     interval_leq_test();
