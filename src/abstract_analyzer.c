@@ -16,15 +16,34 @@ Then apply the worklist algorithm and return the fixpoint.
 
 typedef void Abstract_State;
 
-struct While_Analyzer {
-    CFG *cfg;
-    Abstract_State **state;
-    char *src;
-    struct {
-        Abstract_State *(*state_init_bottom) (const char **var_names, size_t var_count);
-        Abstract_State *(*state_init_top) (const char **var_names, size_t var_count);
-        Abstract_State (*state_free)(Abstract_State *s);
+typedef struct {
+    const char *name;
+    size_t len;
+} Variable;
 
+struct While_Analyzer {
+    /* Control Flow Graph of the input program, contains the program points (the nodes) */
+    CFG *cfg;
+
+    /*
+    Every element is the pointer to a state.
+
+    So state[0] is the pointer to the state of the first program point
+    (the first node of the cfg, cfg->nodes[0]),
+    state[1] is the pointer to the state of the second program point, and so on...
+    */
+    Abstract_State **state;
+
+    /* All variables present in the input program */
+    Variable *vars;
+    size_t var_count;
+
+    /* Source code of the input program */
+    char *src;
+
+    /* Functions needed for the analysis, dynamically setted to the chosen domain */
+    struct {
+        Abstract_State (*state_free)(Abstract_State *s);
         Abstract_State *(*exec_command) (const Abstract_State *s, const AST_Node *command);
         bool (*abstract_state_leq) (const Abstract_State *s1, const Abstract_State *s2);
         Abstract_State *(*U) (const Abstract_State *s1, const Abstract_State *s2); /* Union */
@@ -35,13 +54,15 @@ struct While_Analyzer {
 
 
 /* =================== Parametric interval domain Int(m,n) wrappers =================== */
-Abstract_State* state_init_bottom_abstract_int(const char **var_names, size_t var_count) {
-    return (Abstract_State *)abstract_int_state_init_bottom(var_names, var_count);
-}
+// bool abstract_int_state_leq_wrap(const Abstract_State *s1, const Abstract_State *s2) {
+//     return abstract_int_state_leq((const Abstract_Int_State *) s1, (const Abstract_Int_State *) s2);
+// }
 /* TODO */
 /* ==================================================================================== */
 
-While_Analyzer *while_analyzer_init_parametric_interval(const char *src_path) {
+
+/* Default init for all types of domain */
+static While_Analyzer *while_analyzer_init(const char *src_path) {
     /* Open source file */
     FILE *fp = fopen(src_path, "r");
 
@@ -76,11 +97,58 @@ While_Analyzer *while_analyzer_init_parametric_interval(const char *src_path) {
     wa->cfg = cfg_get(ast);
     parser_free_ast_node(ast);
 
-    /* TODO: get all variable names from CFG */
-    wa->state = NULL; // xmalloc...
+    /* Get var count in the input program */
+    wa->var_count = 0;
+    for (size_t i = 0; i < wa->cfg->count; ++i) {
+        CFG_Node node = wa->cfg->nodes[i];
+        for (size_t j = 0; j < node.edge_count; ++j) {
+            CFG_Edge edge = node.edges[j];
+
+            if (edge.type == EDGE_ASSIGN) {
+                wa->var_count++;
+            }
+        }
+    }
+
+    /* Alloc and link variable names/len to wa->vars */
+    wa->vars = xmalloc(sizeof(Variable) * wa->var_count);
+
+    size_t loop_count = 0;
+    for (size_t i = 0; i < wa->cfg->count; ++i) {
+        CFG_Node node = wa->cfg->nodes[i];
+        for (size_t j = 0; j < node.edge_count; ++j) {
+            CFG_Edge edge = node.edges[j];
+
+            if (edge.type == EDGE_ASSIGN) {
+                const char *str = edge.as.assign->as.child.left->as.var.str;
+                size_t len = edge.as.assign->as.child.left->as.var.len;
+                wa->vars[loop_count].name = str;
+                wa->vars[loop_count].len = len;
+                loop_count++;
+            }
+        }
+    }
+
+    /* Print vars */
+    for (size_t i = 0; i < wa->var_count; ++i) {
+        printf("(var) %.*s\n", (int) wa->vars[i].len, wa->vars[i].name);
+    }
+
+    /* CFG graphviz */
+    cfg_print_graphviz(wa->cfg);
+
+    return wa;
+}
+
+While_Analyzer *while_analyzer_init_parametric_interval(const char *src_path) {
+    While_Analyzer *wa = while_analyzer_init(src_path);
+
+    /* TODO */
+    /* Alloc abstract states for all program points */
+    // wa->state = (Abstract_State *)abstract_int_state_init(var_names, var_count, wa->cfg->count);
 
     /* TODO: link all domain functions */
-    wa->func.state_init_bottom = state_init_bottom_abstract_int;
+    // wa->func.abstract_state_leq = abstract_int_state_leq_wrap;
 
     return wa;
 }
@@ -91,6 +159,7 @@ While_Analyzer *while_analyzer_init_parametric_interval(const char *src_path) {
 void while_analyzer_free(While_Analyzer *wa) {
     free(wa->src);
     cfg_free(wa->cfg);
-    free(wa->state);
+    free(wa->vars);
+    // free(wa->state);
     free(wa);
 }
