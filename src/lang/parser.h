@@ -67,10 +67,7 @@ struct AST_Node {
         } child;
 
         /* Leaf node attributes */
-        struct {
-            const char *str;
-            size_t len;
-        } var;
+        String var;
         int32_t num;
         bool boolean;
     } as;

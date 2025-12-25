@@ -1,5 +1,5 @@
 #include "cfg.h"
-#include "../utils.h"
+#include "../common.h"
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -230,7 +230,7 @@ void cfg_print_graphviz(CFG *cfg) {
                 This mehod uses the assumption that the vars are pointing
                 to the original source file and that the source is zero ended.
                 */
-                const char *var = node.edges[j].as.assign->as.child.left->as.var.str;
+                const char *var = node.edges[j].as.assign->as.child.left->as.var.name;
                 while (
                 *var != ';' && *var != '\0' &&
                 strncmp(var, "else", 4) != 0 &&

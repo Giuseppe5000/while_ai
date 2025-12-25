@@ -1,6 +1,7 @@
 #ifndef WHILE_AI_LEXER_
 #define WHILE_AI_LEXER_
 
+#include "../common.h"
 #include <stddef.h>
 #include <stdint.h>
 
@@ -39,10 +40,7 @@ enum Token_Type {
 typedef struct {
     enum Token_Type type;
     union {
-        struct {
-            const char *data;
-            size_t len;
-        } str;
+        String str;
         int32_t num;
     } as;
 } Token;

@@ -1,5 +1,5 @@
 #include "parser.h"
-#include "../utils.h"
+#include "../common.h"
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
@@ -25,7 +25,7 @@ static void parser_print_ast_impl(const AST_Node *node, int indent) {
         printf("%*s%d\n", indent, "", node->as.num);
     }
     else if (node->type == NODE_VAR) {
-        printf("%*s%.*s\n", indent, "", (int)node->as.var.len, node->as.var.str);
+        printf("%*s%.*s\n", indent, "", (int)node->as.var.len, node->as.var.name);
     }
     else if (node->type == NODE_BOOL_LITERAL) {
         if (node->as.boolean) {
@@ -104,7 +104,7 @@ AST_Node *parser_copy_node(const AST_Node *node) {
                 node_copy->as.num = node->as.num;
             }
             else if (node->type == NODE_VAR) {
-                node_copy->as.var.str = node->as.var.str;
+                node_copy->as.var.name = node->as.var.name;
                 node_copy->as.var.len = node->as.var.len;
             }
             else if (node->type == NODE_BOOL_LITERAL) {
@@ -163,7 +163,7 @@ static AST_Node *parse_factor_aexp(Lexer *lex) {
     /* Variable (a) */
     if (t.type == TOKEN_VAR) {
         AST_Node *var_node = create_node(NODE_VAR);
-        var_node->as.var.str = t.as.str.data;
+        var_node->as.var.name = t.as.str.name;
         var_node->as.var.len = t.as.str.len;
 
         return var_node;
@@ -298,7 +298,7 @@ static AST_Node *parse_atom_stmt(Lexer *lex) {
 
         /* Variable (a) */
         AST_Node *var_node = create_node(NODE_VAR);
-        var_node->as.var.str = t.as.str.data;
+        var_node->as.var.name = t.as.str.name;
         var_node->as.var.len = t.as.str.len;
 
         /* Assing symbol (:=) */

@@ -1,7 +1,7 @@
 #include "../include/abstract_analyzer.h"
 #include "lang/cfg.h"
 #include "lang/parser.h"
-#include "utils.h"
+#include "common.h"
 #include "domain/abstract_interval_domain.h"
 
 #include <stdio.h>
@@ -15,11 +15,6 @@ Then apply the worklist algorithm and return the fixpoint.
 */
 
 typedef void Abstract_State;
-
-typedef struct {
-    const char *name;
-    size_t len;
-} Variable;
 
 struct While_Analyzer {
     /* Control Flow Graph of the input program, contains the program points (the nodes) */
@@ -35,7 +30,7 @@ struct While_Analyzer {
     Abstract_State **state;
 
     /* All variables present in the input program */
-    Variable *vars;
+    String *vars;
     size_t var_count;
 
     /* Source code of the input program */
@@ -44,7 +39,7 @@ struct While_Analyzer {
     /* Functions needed for the analysis, dynamically setted to the chosen domain */
     struct {
         void (*state_free)(Abstract_State *s);
-        Abstract_State *(*exec_command) (const Abstract_State *s, const AST_Node *command);
+        Abstract_State *(*exec_command) (const Abstract_State *s, const AST_Node *command, const String *vars);
         bool (*abstract_state_leq) (const Abstract_State *s1, const Abstract_State *s2);
         Abstract_State *(*U) (const Abstract_State *s1, const Abstract_State *s2); /* Union */
         Abstract_State *(*widening) (const Abstract_State *s1, const Abstract_State *s2);
@@ -115,7 +110,7 @@ static While_Analyzer *while_analyzer_init(const char *src_path) {
     }
 
     /* Alloc and link variable names/len to wa->vars */
-    wa->vars = xmalloc(sizeof(Variable) * wa->var_count);
+    wa->vars = xmalloc(sizeof(String) * wa->var_count);
 
     size_t loop_count = 0;
     for (size_t i = 0; i < wa->cfg->count; ++i) {
@@ -124,7 +119,7 @@ static While_Analyzer *while_analyzer_init(const char *src_path) {
             CFG_Edge edge = node.edges[j];
 
             if (edge.type == EDGE_ASSIGN) {
-                const char *str = edge.as.assign->as.child.left->as.var.str;
+                const char *str = edge.as.assign->as.child.left->as.var.name;
                 size_t len = edge.as.assign->as.child.left->as.var.len;
                 wa->vars[loop_count].name = str;
                 wa->vars[loop_count].len = len;

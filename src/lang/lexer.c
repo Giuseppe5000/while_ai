@@ -1,5 +1,5 @@
 #include "lexer.h"
-#include "../utils.h"
+#include "../common.h"
 
 #include <stdlib.h>
 #include <ctype.h>
@@ -74,7 +74,7 @@ static Token check_keyword(Lexer *lex, Keyword_Token kt) {
         }
 
         t.type = kt.type;
-        t.as.str.data = lex->cursor;
+        t.as.str.name = lex->cursor;
         t.as.str.len = strlen(kt.keyword);
 
         lex->cursor += t.as.str.len;
@@ -125,7 +125,7 @@ Token lex_next(Lexer *lex) {
         }
 
         t.type = TOKEN_VAR;
-        t.as.str.data = start;
+        t.as.str.name = start;
         t.as.str.len = lex->cursor - start;
         return t;
     }

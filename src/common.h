@@ -3,6 +3,11 @@
 
 #include <stddef.h>
 
+typedef struct {
+    const char *name;
+    size_t len;
+} String;
+
 /* Same as originals but exits on OOM */
 void *xmalloc(size_t size);
 void *xrealloc(void *ptr, size_t size);
