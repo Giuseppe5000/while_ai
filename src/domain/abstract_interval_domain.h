@@ -2,29 +2,31 @@
 #define WHILE_AI_ABSTRACT_INTERVAL_DOM_
 
 #include "../lang/parser.h"
+#include "../common.h"
 #include <stdint.h>
 #include <stddef.h>
 
 typedef struct Interval Interval;
+typedef struct Abstract_Interval_Ctx Abstract_Interval_Ctx;
 
 /*
-Set the parameters for Int(m,n) and the number of variables (so the number of intervals for state).
-This function MUST be called before all the other functions.
+Return the domain context, setting parameters for Int(m,n) and the variables of the program.
 
-[NOTE]: This function is not thread safe.
+[NOTE]: The ownership of the 'vars' array is up to the caller.
 */
-void abstract_int_configure(int64_t m, int64_t n, size_t var_count);
+Abstract_Interval_Ctx *abstract_interval_ctx_init(int64_t m, int64_t n, const String *vars, size_t var_count);
+
+/* Free the context */
+void abstract_interval_ctx_free(Abstract_Interval_Ctx *ctx);
 
 /*
-Create an array of Abstract Interval states in the domain of parametric intervals (m,n).
+Create an Abstract Interval State in the domain of parametric intervals (m,n).
+The state is just an array of intervals.
 
-For example, if we call 'abstract_int_configure(-100, 100, 10)' then
-'abstract_int_state_init(1)' will return an array of 10 intervals,
-'abstract_int_state_init(2)' will return an array of 20 intervals, and so on.
+The array size depdens on the context, if variable number is N then an array
+of N Intervals will be returned.
 
-It is useful to create multiple abstract states in one hit for a better cache locality.
-
-[NOTE]: This function sets all intervals in the states to bottom.
+[NOTE]: This function sets all intervals to bottom.
 
 The domain of parametric intervals is defined as the union of this sets:
     { BOTTOM, TOP }
@@ -33,28 +35,28 @@ The domain of parametric intervals is defined as the union of this sets:
     { (-INF, k] | k ∈ [m, n] }
     { [k, +INF) | k ∈ [m, n] }
 */
-Interval *abstract_int_state_init(size_t count);
-
-/* Helper functions to set all intervals of a state to bottom/top */
-void abstract_int_state_set_bottom(Interval *s);
-void abstract_int_state_set_top(Interval *s);
+Interval *abstract_interval_state_init(const Abstract_Interval_Ctx *ctx);
 
 /* Free the abstract state */
-void abstract_int_state_free(Interval *s);
+void abstract_interval_state_free(Interval *s);
+
+/* Helper functions to set all the intervals of a state to bottom or top */
+void abstract_interval_state_set_bottom(const Abstract_Interval_Ctx *ctx, Interval *s);
+void abstract_interval_state_set_top(const Abstract_Interval_Ctx *ctx, Interval *s);
 
 /* Abstract commands */
-Interval *abstract_int_state_exec_command(const Interval *s, const AST_Node *command);
+Interval *abstract_int_state_exec_command(const Abstract_Interval_Ctx *ctx, const Interval *s, const AST_Node *command);
 
 /* Compare */
-bool abstract_int_state_leq(const Interval *s1, const Interval *s2);
+bool abstract_int_state_leq(const Abstract_Interval_Ctx *ctx, const Interval *s1, const Interval *s2);
 
 /* Union */
-Interval *abstract_int_state_union(const Interval *s1, const Interval *s2);
+Interval *abstract_int_state_union(const Abstract_Interval_Ctx *ctx, const Interval *s1, const Interval *s2);
 
 /* Widening */
-Interval *abstract_int_state_widening(const Interval *s1, const Interval *s2);
+Interval *abstract_int_state_widening(const Abstract_Interval_Ctx *ctx, const Interval *s1, const Interval *s2);
 
 /* Narrowing */
-Interval *abstract_int_state_narrowing(const Interval *s1, const Interval *s2);
+Interval *abstract_int_state_narrowing(const Abstract_Interval_Ctx *ctx, const Interval *s1, const Interval *s2);
 
 #endif  /* WHILE_AI_ABSTRACT_INTERVAL_DOM_ */

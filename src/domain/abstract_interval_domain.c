@@ -8,7 +8,7 @@
 
 enum Interval_Type {
     INTERVAL_BOTTOM, /* Bottom element */
-    INTERVAL_STD,    /* Standard interval (inf included) */
+    INTERVAL_STD,    /* Standard interval (Top included) */
 };
 
 /*
@@ -23,10 +23,12 @@ struct Interval {
     int64_t b;
 };
 
-/* By default the Interval is standard Int domain */
-static int64_t int_m = INTERVAL_MIN_INF;
-static int64_t int_n = INTERVAL_PLUS_INF;
-static size_t var_count = 0;
+struct Abstract_Interval_Ctx {
+    int64_t m;
+    int64_t n;
+    const String *vars;
+    size_t var_count;
+};
 
 /* ================================== Interval ops ==================================== */
 
@@ -54,7 +56,7 @@ Create an interval beloging to the domain Int(m,n).
 
 NOTE: if [a, b] does not belong to the domain Top will be returned.
 */
-static Interval interval_create(int64_t a, int64_t b) {
+static Interval interval_create(const Abstract_Interval_Ctx *ctx, int64_t a, int64_t b) {
     Interval i = {0};
     i.type = INTERVAL_STD;
     i.a = a;
@@ -80,8 +82,8 @@ static Interval interval_create(int64_t a, int64_t b) {
     if (a < b) {
         Interval i_mn = {
             .type = INTERVAL_STD,
-            .a = int_m,
-            .b = int_n,
+            .a = ctx->m,
+            .b = ctx->n,
         };
 
         if (interval_leq(i, i_mn)) {
@@ -90,12 +92,12 @@ static Interval interval_create(int64_t a, int64_t b) {
     }
 
     /* { (-INF, k] | k ∈ [m, n] } */
-    if (a == INTERVAL_MIN_INF && (b >= int_m && b <= int_n)) {
+    if (a == INTERVAL_MIN_INF && (b >= ctx->m && b <= ctx->n)) {
         return i;
     }
 
     /* { [k, +INF) | k ∈ [m, n] } */
-    if (b == INTERVAL_PLUS_INF && (a >= int_m && a <= int_n)) {
+    if (b == INTERVAL_PLUS_INF && (a >= ctx->m && a <= ctx->n)) {
         return i;
     }
 
@@ -125,35 +127,45 @@ static Interval interval_create(int64_t a, int64_t b) {
 
 /* ==================================================================================== */
 
-void abstract_int_configure(int64_t m, int64_t n, size_t _var_count) {
-    int_m = m;
-    int_n = n;
-    var_count = _var_count;
+Abstract_Interval_Ctx *abstract_interval_ctx_init(int64_t m, int64_t n, const String *vars, size_t var_count) {
+    Abstract_Interval_Ctx *ctx = xmalloc(sizeof(Abstract_Interval_Ctx));
+
+    /* Setting the props */
+    ctx->m = m;
+    ctx->n = n;
+    ctx->vars = vars;
+    ctx->var_count = var_count;
+
+    return ctx;
 }
 
-Interval *abstract_int_state_init(size_t count) {
-    Interval *s = xmalloc(sizeof(Interval) * var_count * count);
+void abstract_interval_ctx_free(Abstract_Interval_Ctx *ctx) {
+    free(ctx);
+}
 
-    /* By default set all to bottom*/
-    memset(s, 0, sizeof(Interval) * var_count * count);
+Interval *abstract_interval_state_init(const Abstract_Interval_Ctx *ctx) {
+    Interval *s = xmalloc(sizeof(Interval) * ctx->var_count);
+
+    /* By default set to bottom*/
+    abstract_interval_state_set_bottom(ctx, s);
 
     return s;
 }
 
-void abstract_int_state_set_bottom(Interval *s) {
-    /* Since BOTTOM enum = 0, all the vars will be bottom */
-    memset(s, 0, sizeof(Interval) * var_count);
+void abstract_interval_state_set_bottom(const Abstract_Interval_Ctx *ctx, Interval *s) {
+    /* Since BOTTOM enum value = 0, all the intervals will be bottom */
+    memset(s, 0, sizeof(Interval) * ctx->var_count);
 }
 
-void abstract_int_state_set_top(Interval *s) {
+void abstract_interval_state_set_top(const Abstract_Interval_Ctx *ctx, Interval *s) {
     /* Set every interval to TOP */
-    for (size_t i = 0; i < var_count; ++i) {
+    for (size_t i = 0; i < ctx->var_count; ++i) {
         s[i].type = INTERVAL_STD;
         s[i].a = INTERVAL_MIN_INF;
         s[i].b = INTERVAL_PLUS_INF;
     }
 }
 
-void abstract_int_state_free(Interval *s) {
+void abstract_interval_state_free(Interval *s) {
     free(s);
 }
