@@ -7,13 +7,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-/*
-TODO: Wrap every point of the CFG with an abstract state.
-P0 is initialized with top and other points to bottom.
-
-Then apply the worklist algorithm and return the fixpoint.
-*/
-
 typedef void Abstract_State;
 typedef void Abstract_Dom_Ctx;
 
@@ -40,10 +33,12 @@ struct While_Analyzer {
     /* Source code of the input program */
     char *src;
 
-    /* Functions needed for the analysis, dynamically setted to the chosen domain */
+    /* Functions needed for the analysis, dynamically setted depending on the domain */
     struct {
-        void (*ctx_free)(Abstract_Dom_Ctx *ctx);
-        void (*state_free)(Abstract_State *s);
+        void (*ctx_free) (Abstract_Dom_Ctx *ctx);
+        void (*state_free) (Abstract_State *s);
+        void (*state_set_bottom) (const Abstract_Dom_Ctx *ctx, Abstract_State *s);
+        void (*state_set_top) (const Abstract_Dom_Ctx *ctx, Abstract_State *s);
 
         Abstract_State *(*exec_command) (const Abstract_Dom_Ctx *ctx, const Abstract_State *s, const AST_Node *command);
         bool (*abstract_state_leq) (const Abstract_Dom_Ctx *ctx, const Abstract_State *s1, const Abstract_State *s2);
@@ -52,20 +47,6 @@ struct While_Analyzer {
         Abstract_State *(*narrowing) (const Abstract_Dom_Ctx *ctx, const Abstract_State *s1, const Abstract_State *s2);
     } func;
 };
-
-
-/* =================== Parametric interval domain Int(m,n) wrappers =================== */
-void abstract_interval_state_free_wrap(Abstract_State *s) {
-    abstract_interval_state_free((Interval *) s);
-}
-
-void abstract_interval_ctx_free_wrap(Abstract_Dom_Ctx *ctx) {
-    abstract_interval_ctx_free((Abstract_Interval_Ctx *)ctx);
-}
-
-/* TODO: continue */
-/* ==================================================================================== */
-
 
 /* Default init for all types of domain */
 static While_Analyzer *while_analyzer_init(const char *src_path) {
@@ -146,6 +127,52 @@ static While_Analyzer *while_analyzer_init(const char *src_path) {
     return wa;
 }
 
+void while_analyzer_exec(While_Analyzer *wa) {
+
+    /* Init the abstract states (Top for P0 and Bottom the others) */
+    wa->func.state_set_top(wa->ctx, wa->state[0]);
+    for (size_t i = 1; i < wa->cfg->count; ++i) {
+        wa->func.state_set_bottom(wa->ctx, wa->state[i]);
+    }
+
+    /* TODO: Worklist algorithm */
+}
+
+void while_analyzer_free(While_Analyzer *wa) {
+    /* Free abstract states */
+    for (size_t i = 0; i < wa->cfg->count; ++i) {
+        wa->func.state_free(wa->state[i]);
+    }
+    free(wa->state);
+    wa->func.ctx_free(wa->ctx);
+    free(wa->src);
+    cfg_free(wa->cfg);
+    free(wa->vars);
+    free(wa);
+}
+
+/* ======================== Parametric interval domain Int(m,n) ======================= */
+
+
+/* ================================ Function wrappers ================================= */
+void abstract_interval_state_free_wrap(Abstract_State *s) {
+    abstract_interval_state_free((Interval *) s);
+}
+
+void abstract_interval_ctx_free_wrap(Abstract_Dom_Ctx *ctx) {
+    abstract_interval_ctx_free((Abstract_Interval_Ctx *)ctx);
+}
+
+void abstract_interval_state_set_bottom_wrapper(const Abstract_Dom_Ctx *ctx, Abstract_State *s) {
+    abstract_interval_state_set_bottom((const Abstract_Interval_Ctx *) ctx, (Interval *) s);
+}
+
+void abstract_interval_state_set_top_wrapper(const Abstract_Dom_Ctx *ctx, Abstract_State *s) {
+    abstract_interval_state_set_top((const Abstract_Interval_Ctx *) ctx, (Interval *) s);
+}
+/* TODO: continue */
+/* ==================================================================================== */
+
 While_Analyzer *while_analyzer_init_parametric_interval(const char *src_path, int64_t m, int64_t n) {
     While_Analyzer *wa = while_analyzer_init(src_path);
 
@@ -160,22 +187,11 @@ While_Analyzer *while_analyzer_init_parametric_interval(const char *src_path, in
     }
 
     /* TODO: link all domain functions */
-    wa->func.state_free = abstract_interval_state_free_wrap;
     wa->func.ctx_free = abstract_interval_ctx_free_wrap;
-    // wa->func.abstract_state_leq = abstract_int_state_leq_wrap;
+    wa->func.state_free = abstract_interval_state_free_wrap;
+    wa->func.state_set_bottom = abstract_interval_state_set_bottom_wrapper;
+    wa->func.state_set_top = abstract_interval_state_set_top_wrapper;
 
     return wa;
 }
-
-void while_analyzer_free(While_Analyzer *wa) {
-    /* Free abstract states */
-    for (size_t i = 0; i < wa->cfg->count; ++i) {
-        wa->func.state_free(wa->state[i]);
-    }
-    free(wa->state);
-    free(wa->ctx);
-    free(wa->src);
-    cfg_free(wa->cfg);
-    free(wa->vars);
-    free(wa);
-}
+/* ==================================================================================== */
