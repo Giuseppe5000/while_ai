@@ -78,6 +78,12 @@ static Interval interval_create(const Abstract_Interval_Ctx *ctx, int64_t a, int
 
     /* { [k,k] | k ∈ Z } */
     if (a == b) {
+        /* Edge case: (-INF, -INF) or (INF,INF) */
+        if (a == INTERVAL_MIN_INF || a == INTERVAL_PLUS_INF) {
+            i.type = INTERVAL_STD;
+            i.a = INTERVAL_MIN_INF;
+            i.b = INTERVAL_PLUS_INF;
+        }
         return i;
     }
 

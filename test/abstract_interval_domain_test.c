@@ -36,6 +36,13 @@ void interval_create_test(void) {
     i = interval_create(ctx, -20, 7);
     assert(i.type == INTERVAL_STD && i.a == INTERVAL_MIN_INF && i.b == INTERVAL_PLUS_INF);
 
+    /* Try to create (-INF, -INF) / (INF,INF) */
+    i = interval_create(ctx, INTERVAL_MIN_INF, INTERVAL_MIN_INF);
+    assert(i.type == INTERVAL_STD && i.a == INTERVAL_MIN_INF && i.b == INTERVAL_PLUS_INF);
+
+    i = interval_create(ctx, INTERVAL_PLUS_INF, INTERVAL_PLUS_INF);
+    assert(i.type == INTERVAL_STD && i.a == INTERVAL_MIN_INF && i.b == INTERVAL_PLUS_INF);
+
     abstract_interval_ctx_free(ctx);
 
     /* m,n infinite */
@@ -66,6 +73,15 @@ void interval_create_test(void) {
 
     i = interval_create(ctx, -6, 7);
     assert(i.type == INTERVAL_STD);
+
+    /* Try to create (-INF, -INF) / (INF,INF) */
+    i = interval_create(ctx, INTERVAL_MIN_INF, INTERVAL_MIN_INF);
+    assert(i.type == INTERVAL_STD && i.a == INTERVAL_MIN_INF && i.b == INTERVAL_PLUS_INF);
+
+    i = interval_create(ctx, INTERVAL_PLUS_INF, INTERVAL_PLUS_INF);
+    assert(i.type == INTERVAL_STD && i.a == INTERVAL_MIN_INF && i.b == INTERVAL_PLUS_INF);
+
+    abstract_interval_ctx_free(ctx);
 }
 
 void interval_leq_test(void) {
