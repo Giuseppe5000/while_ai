@@ -208,6 +208,11 @@ void interval_union_test(void) {
     i_union = interval_union(ctx, i1, i2);
     assert(i_union.type == INTERVAL_STD && i_union.a == i2.a && i_union.b == i1.b);
 
+    i1 = interval_create(ctx, -1, INTERVAL_PLUS_INF); /* [-1, +INF) */
+    i2 = interval_create(ctx, INTERVAL_MIN_INF, 8); /* (-INF, 8] */
+    i_union = interval_union(ctx, i1, i2);
+    assert(i_union.type == INTERVAL_STD && i_union.a == i2.a && i_union.b == i1.b);
+
     i1 = interval_create(ctx, 100, 100);  /* [100, 100] */
     i2 = interval_create(ctx, 1, 2);      /* [1, 2] */
     i_union = interval_union(ctx, i1, i2);
@@ -230,4 +235,6 @@ int main(void) {
     printf("[OK]: interval_create_test pass.\n");
     interval_union_test();
     printf("[OK]: interval_union_test, test pass.\n");
+
+    return 0;
 }

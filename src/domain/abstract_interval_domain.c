@@ -51,9 +51,6 @@ static bool interval_leq(Interval i1, Interval i2) {
     }
 }
 
-
-/* TODO: I can contruct (-INF, -INF) and (INF,INF), this case is strange */
-
 /*
 Create an interval beloging to the domain Int(m,n).
 
@@ -78,7 +75,7 @@ static Interval interval_create(const Abstract_Interval_Ctx *ctx, int64_t a, int
 
     /* { [k,k] | k ∈ Z } */
     if (a == b) {
-        /* Edge case: (-INF, -INF) or (INF,INF) */
+        /* Edge case: (-INF, -INF) or (INF,INF) => return Top */
         if (a == INTERVAL_MIN_INF || a == INTERVAL_PLUS_INF) {
             i.type = INTERVAL_STD;
             i.a = INTERVAL_MIN_INF;
@@ -274,7 +271,15 @@ bool abstract_interval_state_leq(const Abstract_Interval_Ctx *ctx, const Interva
     return result;
 }
 
-Interval *abstract_interval_state_union(const Abstract_Interval_Ctx *ctx, const Interval *s1, const Interval *s2) {}
+Interval *abstract_interval_state_union(const Abstract_Interval_Ctx *ctx, const Interval *s1, const Interval *s2) {
+    Interval *res = abstract_interval_state_init(ctx);
+
+    for (size_t i = 0; i < ctx->var_count; ++i) {
+        res[i] = interval_union(ctx, s1[i], s2[i]);
+    }
+
+    return res;
+}
 
 Interval *abstract_interval_state_widening(const Abstract_Interval_Ctx *ctx, const Interval *s1, const Interval *s2) {}
 
