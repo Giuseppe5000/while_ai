@@ -51,6 +51,9 @@ static bool interval_leq(Interval i1, Interval i2) {
     }
 }
 
+
+/* TODO: I can contruct (-INF, -INF) and (INF,INF), this case is strange */
+
 /*
 Create an interval beloging to the domain Int(m,n).
 
@@ -78,7 +81,7 @@ static Interval interval_create(const Abstract_Interval_Ctx *ctx, int64_t a, int
         return i;
     }
 
-    /* { [a, b] | a < b, [a, b] ⊆ [m, n] } */
+    /* { [a,b] | a < b, [a,b] ⊆ [m,n] } */
     if (a < b) {
         Interval i_mn = {
             .type = INTERVAL_STD,
@@ -110,7 +113,89 @@ static Interval interval_create(const Abstract_Interval_Ctx *ctx, int64_t a, int
 
 
 /* Returns the union of intervals 'a' and 'b' */
-// static Interval interval_union(const Abstract_Int_State *s, Interval a, Interval b);
+static Interval interval_union(const Abstract_Interval_Ctx *ctx, Interval i1, Interval i2) {
+
+    /* Bottom handling */
+    if (i1.type == INTERVAL_BOTTOM) {
+        return i2;
+    }
+    else if (i2.type == INTERVAL_BOTTOM) {
+        return i1;
+    }
+    /* Top handling */
+    else if (i1.type == INTERVAL_STD && i1.a == INTERVAL_MIN_INF && i1.b == INTERVAL_PLUS_INF) {
+        return i1;
+    }
+    else if (i2.type == INTERVAL_STD && i2.a == INTERVAL_MIN_INF && i2.b == INTERVAL_PLUS_INF) {
+        return i2;
+    }
+    /* Other cases */
+    else {
+        int64_t min_a = i1.a >= i2.a ? i2.a : i1.a;
+        int64_t max_b = i1.b >= i2.b ? i1.b : i2.b;
+
+        /*
+        [Edge case: i1/i2 = [k,k] with k < m or k > n]
+
+        First we check if both i1 and i2 are like [k,k]
+        and then we check only for i1/i2.
+        */
+        if (i1.a == i1.b && i2.a == i2.b) {
+            /* Both i1 and i2 are like [k,k], we need to distinguish 3 cases */
+
+            /*
+            Case i1,i2 < m.
+            Returning (-INF, m] which is the smallest valid interval that contains both i1,i2.
+            */
+            if (i1.a < ctx->m && i2.a < ctx->m) {
+                return interval_create(ctx, INTERVAL_MIN_INF, ctx->m);
+            }
+
+            /*
+            Case i1,i2 > n.
+            Returning [n, +INF) which is the smallest valid interval that contains both i1,i2.
+            */
+            if (i1.a > ctx->n && i2.a > ctx->n) {
+                return interval_create(ctx, ctx->n, INTERVAL_PLUS_INF);
+            }
+
+            /* Case i1<m and i2>n or viceversa, so we can only return Top */
+            if ((i1.a < ctx->m && i2.a > ctx->n) || (i1.a > ctx->n && i2.a < ctx->m)) {
+                return interval_create(ctx, INTERVAL_MIN_INF, INTERVAL_PLUS_INF);
+            }
+
+            /*
+            If I am here, then one of i1/i2 has k in [m,n], so it is not an edge case,
+            so we continue with the single cases on i1 and i2.
+            This is the motivation of using 'if' and not 'else if'.
+            */
+        }
+        if (i1.a == i1.b) {
+            /*
+            In this case i1 is like [k,k] and i2 can be anything but not [k,k].
+            So for including i1 we must take the min/max and if k<m then the min if -INF
+            otherwise max is +INF, so the resulting interval will be a correct over-approximation.
+            */
+            if (i1.a < ctx->m) {
+                min_a = INTERVAL_MIN_INF;
+            }
+            else if (i1.a > ctx->n) {
+                max_b = INTERVAL_PLUS_INF;
+            }
+        }
+        if (i2.a == i2.b) {
+            /* Same reasoning but for i2 */
+            if (i2.a < ctx->m) {
+                min_a = INTERVAL_MIN_INF;
+            }
+            else if (i2.a > ctx->n) {
+                max_b = INTERVAL_PLUS_INF;
+            }
+        }
+
+        return interval_create(ctx, min_a, max_b);
+    }
+}
 
 /* Returns the intersection of intervals 'a' and 'b' */
 // static Interval interval_intersect(const Abstract_Int_State *s, Interval a, Interval b);
