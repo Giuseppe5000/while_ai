@@ -47,7 +47,7 @@ void abstract_interval_state_set_top(const Abstract_Interval_Ctx *ctx, Interval 
 /* Abstract commands */
 Interval *abstract_interval_state_exec_command(const Abstract_Interval_Ctx *ctx, const Interval *s, const AST_Node *command);
 
-/* Compare */
+/* Compare function, returns true if state 's1' <= 's2' */
 bool abstract_interval_state_leq(const Abstract_Interval_Ctx *ctx, const Interval *s1, const Interval *s2);
 
 /* Union */

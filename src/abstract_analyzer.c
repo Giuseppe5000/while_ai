@@ -41,7 +41,7 @@ struct While_Analyzer {
         void (*state_set_top) (const Abstract_Dom_Ctx *ctx, Abstract_State *s);
 
         Abstract_State *(*exec_command) (const Abstract_Dom_Ctx *ctx, const Abstract_State *s, const AST_Node *command);
-        bool (*abstract_state_leq) (const Abstract_Dom_Ctx *ctx, const Abstract_State *s1, const Abstract_State *s2);
+        bool (*state_leq) (const Abstract_Dom_Ctx *ctx, const Abstract_State *s1, const Abstract_State *s2);
         Abstract_State *(*union_) (const Abstract_Dom_Ctx *ctx, const Abstract_State *s1, const Abstract_State *s2);
         Abstract_State *(*widening) (const Abstract_Dom_Ctx *ctx, const Abstract_State *s1, const Abstract_State *s2);
         Abstract_State *(*narrowing) (const Abstract_Dom_Ctx *ctx, const Abstract_State *s1, const Abstract_State *s2);
@@ -212,7 +212,7 @@ While_Analyzer *while_analyzer_init_parametric_interval(const char *src_path, in
     wa->func.state_set_bottom = abstract_interval_state_set_bottom_wrapper;
     wa->func.state_set_top = abstract_interval_state_set_top_wrapper;
     wa->func.exec_command = abstract_interval_state_exec_command_wrapper;
-    wa->func.abstract_state_leq = abstract_interval_state_leq_wrapper;
+    wa->func.state_leq = abstract_interval_state_leq_wrapper;
     wa->func.union_ = abstract_interval_state_union_wrapper;
     wa->func.widening = abstract_interval_state_widening_wrapper;
     wa->func.narrowing = abstract_interval_state_narrowing_wrapper;

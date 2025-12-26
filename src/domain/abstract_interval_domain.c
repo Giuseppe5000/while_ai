@@ -172,11 +172,19 @@ void abstract_interval_state_set_top(const Abstract_Interval_Ctx *ctx, Interval 
 
 Interval *abstract_interval_state_exec_command(const Abstract_Interval_Ctx *ctx, const Interval *s, const AST_Node *command) {}
 
-bool abstract_interval_state_leq(const Abstract_Interval_Ctx *ctx, const Interval *s1, const Interval *s2) {}
+bool abstract_interval_state_leq(const Abstract_Interval_Ctx *ctx, const Interval *s1, const Interval *s2) {
+    bool result = true;
+
+    /* s1 <= s2 if all elements of s1 are <= all elements of s2 */
+    for (size_t i = 0; i < ctx->var_count; ++i) {
+        result = result && interval_leq(s1[i], s2[i]);
+    }
+
+    return result;
+}
 
 Interval *abstract_interval_state_union(const Abstract_Interval_Ctx *ctx, const Interval *s1, const Interval *s2) {}
 
 Interval *abstract_interval_state_widening(const Abstract_Interval_Ctx *ctx, const Interval *s1, const Interval *s2) {}
 
 Interval *abstract_interval_state_narrowing(const Abstract_Interval_Ctx *ctx, const Interval *s1, const Interval *s2) {}
-
