@@ -152,6 +152,10 @@ Interval *abstract_interval_state_init(const Abstract_Interval_Ctx *ctx) {
     return s;
 }
 
+void abstract_interval_state_free(Interval *s) {
+    free(s);
+}
+
 void abstract_interval_state_set_bottom(const Abstract_Interval_Ctx *ctx, Interval *s) {
     /* Since BOTTOM enum value = 0, all the intervals will be bottom */
     memset(s, 0, sizeof(Interval) * ctx->var_count);
@@ -166,6 +170,13 @@ void abstract_interval_state_set_top(const Abstract_Interval_Ctx *ctx, Interval 
     }
 }
 
-void abstract_interval_state_free(Interval *s) {
-    free(s);
-}
+Interval *abstract_interval_state_exec_command(const Abstract_Interval_Ctx *ctx, const Interval *s, const AST_Node *command) {}
+
+bool abstract_interval_state_leq(const Abstract_Interval_Ctx *ctx, const Interval *s1, const Interval *s2) {}
+
+Interval *abstract_interval_state_union(const Abstract_Interval_Ctx *ctx, const Interval *s1, const Interval *s2) {}
+
+Interval *abstract_interval_state_widening(const Abstract_Interval_Ctx *ctx, const Interval *s1, const Interval *s2) {}
+
+Interval *abstract_interval_state_narrowing(const Abstract_Interval_Ctx *ctx, const Interval *s1, const Interval *s2) {}
+

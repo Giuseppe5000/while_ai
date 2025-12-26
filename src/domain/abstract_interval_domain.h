@@ -45,18 +45,18 @@ void abstract_interval_state_set_bottom(const Abstract_Interval_Ctx *ctx, Interv
 void abstract_interval_state_set_top(const Abstract_Interval_Ctx *ctx, Interval *s);
 
 /* Abstract commands */
-Interval *abstract_int_state_exec_command(const Abstract_Interval_Ctx *ctx, const Interval *s, const AST_Node *command);
+Interval *abstract_interval_state_exec_command(const Abstract_Interval_Ctx *ctx, const Interval *s, const AST_Node *command);
 
 /* Compare */
-bool abstract_int_state_leq(const Abstract_Interval_Ctx *ctx, const Interval *s1, const Interval *s2);
+bool abstract_interval_state_leq(const Abstract_Interval_Ctx *ctx, const Interval *s1, const Interval *s2);
 
 /* Union */
-Interval *abstract_int_state_union(const Abstract_Interval_Ctx *ctx, const Interval *s1, const Interval *s2);
+Interval *abstract_interval_state_union(const Abstract_Interval_Ctx *ctx, const Interval *s1, const Interval *s2);
 
 /* Widening */
-Interval *abstract_int_state_widening(const Abstract_Interval_Ctx *ctx, const Interval *s1, const Interval *s2);
+Interval *abstract_interval_state_widening(const Abstract_Interval_Ctx *ctx, const Interval *s1, const Interval *s2);
 
 /* Narrowing */
-Interval *abstract_int_state_narrowing(const Abstract_Interval_Ctx *ctx, const Interval *s1, const Interval *s2);
+Interval *abstract_interval_state_narrowing(const Abstract_Interval_Ctx *ctx, const Interval *s1, const Interval *s2);
 
 #endif  /* WHILE_AI_ABSTRACT_INTERVAL_DOM_ */
