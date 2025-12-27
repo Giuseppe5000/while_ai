@@ -84,6 +84,13 @@ static While_Analyzer *while_analyzer_init(const char *src_path) {
     wa->cfg = cfg_get(ast);
     parser_free_ast_node(ast);
 
+
+/* TODO:
+    this method count multiple times the same variables!
+    wa->vars at this time should be a dynamic array of String,
+    and check for each new encountered variable if it is a new variable
+    or it isn't.
+*/
     /* Get var count in the input program */
     wa->var_count = 0;
     for (size_t i = 0; i < wa->cfg->count; ++i) {
@@ -136,6 +143,11 @@ void while_analyzer_exec(While_Analyzer *wa) {
     cfg_print_graphviz(wa->cfg);
 
     /* TODO: Worklist algorithm */
+    Abstract_State *s = wa->func.exec_command(wa->ctx, wa->state[0], wa->cfg->nodes[0].edges[0].as.assign);
+    wa->func.state_free(wa->state[0]);
+    wa->state[0] = s;
+
+    Abstract_State *s1 = wa->func.exec_command(wa->ctx, wa->state[0], wa->cfg->nodes[1].edges[0].as.assign);
 }
 
 void while_analyzer_free(While_Analyzer *wa) {

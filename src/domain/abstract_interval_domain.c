@@ -267,8 +267,6 @@ void abstract_interval_state_set_top(const Abstract_Interval_Ctx *ctx, Interval 
     }
 }
 
-Interval *abstract_interval_state_exec_command(const Abstract_Interval_Ctx *ctx, const Interval *s, const AST_Node *command) {}
-
 bool abstract_interval_state_leq(const Abstract_Interval_Ctx *ctx, const Interval *s1, const Interval *s2) {
     bool result = true;
 
@@ -293,3 +291,86 @@ Interval *abstract_interval_state_union(const Abstract_Interval_Ctx *ctx, const 
 Interval *abstract_interval_state_widening(const Abstract_Interval_Ctx *ctx, const Interval *s1, const Interval *s2) {}
 
 Interval *abstract_interval_state_narrowing(const Abstract_Interval_Ctx *ctx, const Interval *s1, const Interval *s2) {}
+
+/* Returns a new heap allocated state with the same elements of 's' */
+static Interval *clone_state(const Abstract_Interval_Ctx *ctx, const Interval *s) {
+    Interval *res = abstract_interval_state_init(ctx);
+    memcpy(res, s, sizeof(Interval) * ctx->var_count);
+    return res;
+}
+
+static Interval exec_aexpr(const Abstract_Interval_Ctx *ctx, const Interval *s, const AST_Node *node) {
+    switch (node->type) {
+    case NODE_NUM:
+        {
+            int64_t num = node->as.num;
+            return interval_create(ctx, num, num);
+        }
+
+    case NODE_VAR:
+        {
+            /* Get the assigned variable */
+            String var = node->as.var;
+
+            /* Get the interval for that variable */
+            size_t var_index = 0;
+            for (size_t i = 0; i < ctx->var_count; ++i) {
+                if (strncmp(var.name, ctx->vars[i].name, var.len) == 0) {
+                    var_index = i;
+                }
+            }
+            return s[var_index];
+        }
+
+    case NODE_PLUS:
+        {
+            Interval i1 = exec_aexpr(ctx, s, node->as.child.left);
+            Interval i2 = exec_aexpr(ctx, s, node->as.child.right);
+            return interval_plus(ctx, i1, i2);
+        }
+    default:
+        assert(0 && "TODO");
+    }
+}
+
+static Interval *abstract_interval_state_exec_assign(const Abstract_Interval_Ctx *ctx, const Interval *s, const AST_Node *assign) {
+
+    /* Get the assigned variable */
+    String var = assign->as.child.left->as.var;
+
+    /* Get the interval for that variable */
+    size_t var_index = 0;
+    for (size_t i = 0; i < ctx->var_count; ++i) {
+        if (strncmp(var.name, ctx->vars[i].name, var.len) == 0) {
+            var_index = i;
+        }
+    }
+
+    /* Compute the right expression of assign node */
+    Interval aexpr_res = exec_aexpr(ctx, s, assign->as.child.right);
+
+    /* Create the new state and return */
+    Interval *res = clone_state(ctx, s);
+    res[var_index] = aexpr_res;
+    return res;
+}
+
+Interval *abstract_interval_state_exec_command(const Abstract_Interval_Ctx *ctx, const Interval *s, const AST_Node *command) {
+
+    Interval *res = NULL;
+
+    switch (command->type) {
+    case NODE_ASSIGN:
+        res = abstract_interval_state_exec_assign(ctx, s, command);
+        break;
+    case NODE_IF:
+    case NODE_WHILE:
+        break;
+    case NODE_SKIP:
+        break;
+    default:
+        assert(0 && "UNREACHABLE");
+    }
+
+    return res;
+}
