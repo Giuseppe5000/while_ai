@@ -55,7 +55,7 @@ static bool interval_leq(Interval i1, Interval i2) {
 /*
 Create an interval beloging to the domain Int(m,n).
 
-NOTE: if [a, b] does not belong to the domain Top will be returned.
+NOTE: if [a, b] does not belong to the domain a correct over-approximation will be returned.
 */
 static Interval interval_create(const Abstract_Interval_Ctx *ctx, int64_t a, int64_t b) {
     Interval i = {0};
@@ -174,44 +174,41 @@ static bool integer_plus_overflow_check(int64_t a, int64_t b) {
 }
 
 static Interval interval_plus(const Abstract_Interval_Ctx *ctx, Interval i1, Interval i2) {
-    /* Bottom handling */
-    if (i1.type == INTERVAL_BOTTOM) {
-        return i1;
-    }
-    else if (i2.type == INTERVAL_BOTTOM) {
-        return i2;
-    }
-    /* Top handling */
-    else if (i1.a == INTERVAL_MIN_INF && i1.b == INTERVAL_PLUS_INF) {
-        return i1;
-    }
-    else if (i2.a == INTERVAL_MIN_INF && i2.b == INTERVAL_PLUS_INF) {
-        return i2;
-    }
-    /* Other cases */
-    else {
-        int64_t a;
-        int64_t b;
 
-        /* Check if i1 + i2 will produce overflow */
-        if (integer_plus_overflow_check(i1.a, i2.a) || integer_plus_overflow_check(i1.b, i2.b)) {
+    /* Bottom handling */
+    if (i1.type == INTERVAL_BOTTOM) return i1;
+    if (i2.type == INTERVAL_BOTTOM) return i2;
+
+    int64_t a;
+    int64_t b;
+
+    /* Compute a (checking for overflows) */
+    if (i1.a == INTERVAL_MIN_INF || i2.a == INTERVAL_MIN_INF) {
+        a = INTERVAL_MIN_INF;
+    }
+    else {
+        if (integer_plus_overflow_check(i1.a, i2.a)) {
             assert(0 && "Overflow detected in interval_plus function!"); /* TODO: What to do with an overflow? */
         } else {
             a = i1.a + i2.a;
+        }
+    }
+
+    /* Compute b (checking for overflows) */
+    if (i1.b == INTERVAL_PLUS_INF || i2.b == INTERVAL_PLUS_INF) {
+        b = INTERVAL_PLUS_INF;
+    }
+    else {
+        if (integer_plus_overflow_check(i1.b, i2.b)) {
+            assert(0 && "Overflow detected in interval_plus function!"); /* TODO: What to do with an overflow? */
+        } else {
             b = i1.b + i2.b;
         }
-
-        /* Cases (-INF, k] and [k, +INF) */
-        if (i1.a == INTERVAL_MIN_INF || i2.a == INTERVAL_MIN_INF) {
-            a = INTERVAL_MIN_INF;
-        }
-        else if (i1.b == INTERVAL_PLUS_INF || i2.b == INTERVAL_PLUS_INF) {
-            b = INTERVAL_PLUS_INF;
-        }
-
-        return interval_create(ctx, a, b);
     }
+
+    return interval_create(ctx, a, b);
 }
+
 // static Interval interval_minus(const Abstract_Int_State *s, Interval a, Interval b);
 // static Interval interval_mult(const Abstract_Int_State *s, Interval a, Interval b);
 // static Interval interval_div(const Abstract_Int_State *s, Interval a, Interval b);
