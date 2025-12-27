@@ -365,8 +365,10 @@ Interval *abstract_interval_state_exec_command(const Abstract_Interval_Ctx *ctx,
         break;
     case NODE_IF:
     case NODE_WHILE:
+        /* TODO */
         break;
     case NODE_SKIP:
+        res = clone_state(ctx, s);
         break;
     default:
         assert(0 && "UNREACHABLE");
