@@ -29,6 +29,7 @@ statements:
 
 ## TODO
 - [ ] Lexer doesn't tokenize negative numbers (-x).
+- [ ] Current variable darray stores only vars that are lvalue, so if a var is used only as rvalue (undefined variable) then this causes UB.
 - [ ] Implement the arithmetic ops in the domain (doing also testing).
 - [ ] Implement `abstract_interval_state_exec_command` (three possible commands).
 - [ ] Create the worklist (a queue) in `abstract_analyzer.c` and compute the fixpoint (without widening/narrowing).

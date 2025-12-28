@@ -279,6 +279,8 @@ void interval_plus_test(void) {
     /* TODO: finish */
 }
 
+/* TODO: test minus */
+
 int main(void) {
     interval_leq_test();
     printf("[TEST PASS]: interval_leq\n");

@@ -186,6 +186,8 @@ static Interval interval_plus(const Abstract_Interval_Ctx *ctx, Interval i1, Int
     int64_t a;
     int64_t b;
 
+    /* Rule: [i1.a,i1.b] - [i2.a,i2.b] = [i1.a + i2.a, i1.b + i2.b] */
+
     /* Compute a (checking for overflows) */
     if (i1.a == INTERVAL_MIN_INF || i2.a == INTERVAL_MIN_INF) {
         a = INTERVAL_MIN_INF;
@@ -213,7 +215,44 @@ static Interval interval_plus(const Abstract_Interval_Ctx *ctx, Interval i1, Int
     return interval_create(ctx, a, b);
 }
 
-// static Interval interval_minus(const Abstract_Int_State *s, Interval a, Interval b);
+static Interval interval_minus(const Abstract_Interval_Ctx *ctx, Interval i1, Interval i2) {
+
+    /* Bottom handling */
+    if (i1.type == INTERVAL_BOTTOM) return i1;
+    if (i2.type == INTERVAL_BOTTOM) return i2;
+
+    int64_t a;
+    int64_t b;
+
+    /* Rule: [i1.a,i1.b] - [i2.a,i2.b] = [i1.a - i2.b, i1.b - i2.a] */
+
+    /* Compute a (checking for overflows) */
+    if (i1.a == INTERVAL_MIN_INF || i2.b == INTERVAL_PLUS_INF) {
+        a = INTERVAL_MIN_INF;
+    }
+    else {
+        if (integer_plus_overflow_check(i1.a, -i2.b)) {
+            assert(0 && "Overflow detected in interval_plus function!"); /* TODO: What to do with an overflow? */
+        } else {
+            a = i1.a - i2.b;
+        }
+    }
+
+    /* Compute b (checking for overflows) */
+    if (i1.b == INTERVAL_PLUS_INF || i2.a == INTERVAL_MIN_INF) {
+        b = INTERVAL_PLUS_INF;
+    }
+    else {
+        if (integer_plus_overflow_check(i1.b, -i2.a)) {
+            assert(0 && "Overflow detected in interval_plus function!"); /* TODO: What to do with an overflow? */
+        } else {
+            b = i1.b - i2.a;
+        }
+    }
+
+    return interval_create(ctx, a, b);
+}
+
 // static Interval interval_mult(const Abstract_Int_State *s, Interval a, Interval b);
 // static Interval interval_div(const Abstract_Int_State *s, Interval a, Interval b);
 
@@ -290,6 +329,8 @@ Interval *abstract_interval_state_widening(const Abstract_Interval_Ctx *ctx, con
 
 Interval *abstract_interval_state_narrowing(const Abstract_Interval_Ctx *ctx, const Interval *s1, const Interval *s2) {}
 
+/* ================================ Commands execution ================================ */
+
 /* Returns a new heap allocated state with the same elements of 's' */
 static Interval *clone_state(const Abstract_Interval_Ctx *ctx, const Interval *s) {
     Interval *res = abstract_interval_state_init(ctx);
@@ -326,8 +367,17 @@ static Interval exec_aexpr(const Abstract_Interval_Ctx *ctx, const Interval *s, 
             Interval i2 = exec_aexpr(ctx, s, node->as.child.right);
             return interval_plus(ctx, i1, i2);
         }
-    default:
+    case NODE_MINUS:
+        {
+            Interval i1 = exec_aexpr(ctx, s, node->as.child.left);
+            Interval i2 = exec_aexpr(ctx, s, node->as.child.right);
+            return interval_minus(ctx, i1, i2);
+        }
+    case NODE_MULT:
+    case NODE_DIV:
         assert(0 && "TODO");
+    default:
+        assert(0 && "UNREACHABLE");
     }
 }
 
@@ -374,3 +424,5 @@ Interval *abstract_interval_state_exec_command(const Abstract_Interval_Ctx *ctx,
 
     return res;
 }
+
+/* ==================================================================================== */
