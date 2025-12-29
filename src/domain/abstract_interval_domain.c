@@ -576,9 +576,13 @@ Interval *abstract_interval_state_exec_command(const Abstract_Interval_Ctx *ctx,
     case NODE_ASSIGN:
         res = abstract_interval_state_exec_assign(ctx, s, command);
         break;
-    case NODE_IF:
-    case NODE_WHILE:
-        /* TODO */
+    case NODE_BOOL_LITERAL:
+    case NODE_EQ:
+    case NODE_LEQ:
+    case NODE_NOT:
+    case NODE_AND:
+        /* TODO: for now it just return the state (it is sound) */
+        res = clone_state(ctx, s);
         break;
     case NODE_SKIP:
         res = clone_state(ctx, s);

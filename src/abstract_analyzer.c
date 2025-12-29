@@ -93,6 +93,70 @@ static void set_vars(While_Analyzer *wa) {
 
 /* ==================================================================================== */
 
+/* ============================== Worklist dynamic array  ============================= */
+
+/* The worklist is simply a queue (implemented ad linked list) */
+typedef struct Program_Point_Node Program_Point_Node;
+struct Program_Point_Node {
+    Program_Point_Node *next;
+    size_t id;
+};
+
+typedef struct {
+    Program_Point_Node *head;
+    Program_Point_Node *tail;
+} Worklist;
+
+static void worklist_init(Worklist *wl) {
+    wl->head = NULL;
+    wl->tail = NULL;
+}
+
+static void worklist_enqueue(Worklist *wl, size_t point_id) {
+    Program_Point_Node *node = xmalloc(sizeof(*node));
+    node->id = point_id;
+
+    if (wl->head == NULL && wl->tail == NULL) {
+        wl->head = node;
+        node->next = NULL;
+        wl->tail = node;
+    }
+    else {
+        node->next = wl->head;
+        wl->head = node;
+    }
+}
+
+static size_t worklist_dequeue(Worklist *wl) {
+    if (wl->tail == NULL) {
+        fprintf(stderr, "[ERROR]: Trying to dequeue from empty queue.\n");
+        exit(1);
+    }
+    else {
+        size_t id = wl->tail->id;
+
+        Program_Point_Node *to_free = wl->tail;
+
+        if (wl->head == wl->tail) {
+            /* There is only one node */
+            wl->head = NULL;
+            wl->tail = NULL;
+        } else {
+            /* Set the tail to the prev element */
+            Program_Point_Node *p = wl->head;
+            while (p->next != to_free) {
+                p = p->next;
+            }
+            wl->tail = p;
+        }
+
+        free(to_free);
+        return id;
+    }
+}
+
+/* ==================================================================================== */
+
 /* Default init for all types of domain */
 static While_Analyzer *while_analyzer_init(const char *src_path) {
     /* Open source file */
@@ -151,22 +215,76 @@ void while_analyzer_exec(While_Analyzer *wa) {
     /* CFG graphviz */
     cfg_print_graphviz(wa->cfg);
 
-    /* TODO: Worklist algorithm */
-    Abstract_State *s = wa->func.exec_command(wa->ctx, wa->state[0], wa->cfg->nodes[0].edges[0].as.assign);
-    wa->func.state_free(wa->state[0]);
-    wa->state[0] = s;
+    /* === Worklist algorithm === */
+    Worklist wl = {0};
+    worklist_init(&wl);
 
-    Abstract_State *s1 = wa->func.exec_command(wa->ctx, wa->state[0], wa->cfg->nodes[1].edges[0].as.assign);
-    wa->func.state_free(wa->state[0]);
-    wa->state[0] = s1;
+    /* Add all the program points to the worklist */
+    for (size_t i = 0; i < wa->cfg->count; ++i) {
+            worklist_enqueue(&wl, i);
+    }
 
-    Abstract_State *s2 = wa->func.exec_command(wa->ctx, wa->state[0], wa->cfg->nodes[2].edges[0].as.assign);
-    wa->func.state_free(wa->state[0]);
-    wa->state[0] = s2;
+    while(wl.tail != NULL) {
+        size_t id = worklist_dequeue(&wl);
+        CFG_Node node = wa->cfg->nodes[id];
 
-    Abstract_State *s3 = wa->func.exec_command(wa->ctx, wa->state[0], wa->cfg->nodes[3].edges[0].as.assign);
-    wa->func.state_free(wa->state[0]);
-    wa->state[0] = s3;
+        if (id != 0) {
+            Abstract_State **states = xmalloc(sizeof(Abstract_State *) * node.preds_count);
+
+            /* Apply the abstract transfer function for each predecessor */
+            for (size_t i = 0; i < node.preds_count; ++i) {
+                size_t pred = node.preds[i];
+                CFG_Edge edge;
+
+                if (wa->cfg->nodes[pred].edges[0].dst == id) {
+                    edge = wa->cfg->nodes[pred].edges[0];
+                } else {
+                    edge = wa->cfg->nodes[pred].edges[1];
+                }
+
+                switch (edge.type) {
+                case EDGE_ASSIGN:
+                    states[i] = wa->func.exec_command(wa->ctx, wa->state[pred], edge.as.assign);
+                    break;
+                case EDGE_GUARD:
+                    states[i] = wa->func.exec_command(wa->ctx, wa->state[pred], edge.as.guard.condition);
+                    break;
+                case EDGE_SKIP:
+                    states[i] = wa->func.exec_command(wa->ctx, wa->state[pred], edge.as.skip);
+                    break;
+                }
+            }
+
+            /* Union of the results */
+            Abstract_State *acc = wa->func.union_(wa->ctx, states[0], states[0]);
+            Abstract_State *prev_acc = NULL;
+            for (size_t i = 1; i < node.preds_count; ++i) {
+                prev_acc = acc;
+                acc = wa->func.union_(wa->ctx, acc, states[i]);
+                wa->func.state_free(prev_acc);
+            }
+
+            /* If state changed signal the node dependencies */
+            bool state_changed = !(wa->func.state_leq(wa->ctx, wa->state[id], acc) && wa->func.state_leq(wa->ctx, acc, wa->state[id]));
+            if (state_changed) {
+                wa->func.state_free(wa->state[id]);
+                wa->state[id] = acc;
+
+                for (size_t i = 0; i < node.edge_count; ++i) {
+                    size_t dep = node.edges[i].dst;
+                    worklist_enqueue(&wl, dep);
+                }
+            } else {
+                wa->func.state_free(acc);
+            }
+
+            /* States free */
+            for (size_t i = 0; i < node.preds_count; ++i) {
+                wa->func.state_free(states[i]);
+            }
+            free(states);
+        }
+    }
 }
 
 void while_analyzer_free(While_Analyzer *wa) {
@@ -216,11 +334,11 @@ Abstract_State *abstract_interval_state_union_wrapper(const Abstract_Dom_Ctx *ct
 }
 
 Abstract_State *abstract_interval_state_widening_wrapper(const Abstract_Dom_Ctx *ctx, const Abstract_State *s1, const Abstract_State *s2) {
-    return (Interval *) abstract_interval_state_widening((const Abstract_Interval_Ctx *) ctx, (const Interval *) s1, (const Interval *) s2);
+    return (Abstract_State *) abstract_interval_state_widening((const Abstract_Interval_Ctx *) ctx, (const Interval *) s1, (const Interval *) s2);
 }
 
 Abstract_State *abstract_interval_state_narrowing_wrapper(const Abstract_Dom_Ctx *ctx, const Abstract_State *s1, const Abstract_State *s2) {
-    return (Interval *) abstract_interval_state_narrowing((const Abstract_Interval_Ctx *) ctx, (const Interval *) s1, (const Interval *) s2);
+    return (Abstract_State *) abstract_interval_state_narrowing((const Abstract_Interval_Ctx *) ctx, (const Interval *) s1, (const Interval *) s2);
 }
 /* ==================================================================================== */
 
