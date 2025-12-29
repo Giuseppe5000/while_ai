@@ -226,10 +226,6 @@ void while_analyzer_exec(While_Analyzer *wa, const While_Analyzer_Exec_Opt *opt)
         wa->ops->state_set_bottom(wa->ctx, wa->state[i]);
     }
 
-    /* CFG graphviz */
-    cfg_print_graphviz(wa->cfg);
-    printf("\n");
-
     /* === Worklist algorithm === */
     Worklist wl = {0};
     worklist_init(&wl);
@@ -305,6 +301,10 @@ void while_analyzer_exec(While_Analyzer *wa, const While_Analyzer_Exec_Opt *opt)
         printf("[P%zu]\n", i);
         wa->ops->state_print(wa->ctx, wa->state[i], opt->fp);
     }
+}
+
+void while_analyzer_print_cfg(const While_Analyzer *wa, FILE *fp) {
+    cfg_print_graphviz(wa->cfg, fp);
 }
 
 void while_analyzer_free(While_Analyzer *wa) {

@@ -224,22 +224,23 @@ static void build_cfg(CFG *cfg, AST_Node *root) {
     Pred_Stack preds = {0};
     build_cfg_impl(cfg, root, &counter, &preds);
 
+    cfg->nodes[counter] = build_node(counter);
     wire_predecessors(cfg, counter, &preds);
 
     free(preds.data);
 }
 
-void cfg_print_graphviz(CFG *cfg) {
-    printf("https://dreampuf.github.io/GraphvizOnline/?engine=dot#\n");
-    printf("digraph G {\n");
-    printf("\tnode [shape=circle]\n\n");
+void cfg_print_graphviz(CFG *cfg, FILE *fp) {
+    fprintf(fp, "https://dreampuf.github.io/GraphvizOnline/?engine=dot#\n");
+    fprintf(fp, "digraph G {\n");
+    fprintf(fp, "\tnode [shape=circle]\n\n");
     for (size_t i = 0; i < cfg->count; ++i) {
         CFG_Node node = cfg->nodes[i];
         for (size_t j = 0; j < node.edge_count; ++j) {
-            printf("\tP%zu -> P%zu", node.edges[j].src, node.edges[j].dst);
+            fprintf(fp, "\tP%zu -> P%zu", node.edges[j].src, node.edges[j].dst);
             switch (node.edges[j].type) {
             case EDGE_ASSIGN:
-                printf(" [label=\"");
+                fprintf(fp, " [label=\"");
 
                 /*
                 Simply get the pointer to the var name
@@ -255,23 +256,23 @@ void cfg_print_graphviz(CFG *cfg) {
                 strncmp(var, "done", 4) != 0
                 ) {
                     if (*var != '\n') {
-                        printf("%c", *var);
+                        fprintf(fp, "%c", *var);
                     }
                     var++;
                 }
 
-                printf("\"]\n");
+                fprintf(fp, "\"]\n");
                 break;
             case EDGE_GUARD:
-                printf(" [label=\"%s\"]\n", node.edges[j].as.guard.val ? "T" : "F");
+                fprintf(fp, " [label=\"%s\"]\n", node.edges[j].as.guard.val ? "T" : "F");
                 break;
             case EDGE_SKIP:
-                printf(" [label=\"skip\"]\n");
+                fprintf(fp, " [label=\"skip\"]\n");
                 break;
             }
         }
     }
-    printf("}\n");
+    fprintf(fp, "}\n");
 }
 
 CFG *cfg_get(AST_Node *root) {

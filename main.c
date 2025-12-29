@@ -16,12 +16,32 @@ int main(void) {
     };
     While_Analyzer *wa = while_analyzer_init(src_path, &opt);
 
+    printf("\n");
+    while_analyzer_print_cfg(wa, stdout);
+    printf("\n");
+
     While_Analyzer_Exec_Opt exec_opt = {
         .fp = stdout,
         .widening_delay = SIZE_MAX,
         .descending_steps = 0,
     };
     while_analyzer_exec(wa, &exec_opt);
+    while_analyzer_free(wa);
 
+    printf("[Constant propagation domain]\n");
+
+    /* Constant propagation */
+    opt = (While_Analyzer_Opt) {
+        .type = WHILE_ANALYZER_PARAMETRIC_INTERVAL,
+        .as = {
+            .parametric_interval = {
+                .m = 1,
+                .n = -1,
+            },
+        },
+    };
+
+    wa = while_analyzer_init(src_path, &opt);
+    while_analyzer_exec(wa, &exec_opt);
     while_analyzer_free(wa);
 }

@@ -34,10 +34,16 @@ typedef struct {
     size_t descending_steps;
 } While_Analyzer_Exec_Opt;
 
+/* Inits the analyzer structure based on the specific domain configuration */
 While_Analyzer *while_analyzer_init(const char *src_path, const While_Analyzer_Opt *opt);
 
+/* Execute the analysis and prints the results on opt->fp */
 void while_analyzer_exec(While_Analyzer *wa, const While_Analyzer_Exec_Opt *opt);
 
+/* Prints the Control Flow Graph to fp, uses Graphviz format */
+void while_analyzer_print_cfg(const While_Analyzer *wa, FILE *fp);
+
+/* Free the analyzer structure */
 void while_analyzer_free(While_Analyzer *wa);
 
 #endif /* WHILE_AI_ANALYZER_ */

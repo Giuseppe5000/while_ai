@@ -2,6 +2,7 @@
 #define WHILE_AI_CFG_
 
 #include "parser.h"
+#include <stdio.h>
 
 enum Edge_Type {
     EDGE_ASSIGN,
@@ -52,8 +53,8 @@ typedef struct {
 /* Construct and returns the CFG */
 CFG *cfg_get(AST_Node *root);
 
-/* Prints to the stdout the Graphviz representation of the CFG */
-void cfg_print_graphviz(CFG *cfg);
+/* Prints to 'fp' the Graphviz representation of the CFG */
+void cfg_print_graphviz(CFG *cfg, FILE *fp);
 
 /* Free the CFG */
 void cfg_free(CFG *cfg);
