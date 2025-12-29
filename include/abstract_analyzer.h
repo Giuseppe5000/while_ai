@@ -21,9 +21,6 @@ typedef struct {
 } While_Analyzer_Opt;
 
 typedef struct {
-    /* Where the result of the analysis will be put */
-    FILE *fp;
-
     /*
     Number of steps to wait before applying the widening,
     if the value is SIZE_MAX then it is disabled,
@@ -37,13 +34,16 @@ typedef struct {
 /* Inits the analyzer structure based on the specific domain configuration */
 While_Analyzer *while_analyzer_init(const char *src_path, const While_Analyzer_Opt *opt);
 
-/* Execute the analysis and prints the results on opt->fp */
-void while_analyzer_exec(While_Analyzer *wa, const While_Analyzer_Exec_Opt *opt);
-
-/* Prints the Control Flow Graph to fp, uses Graphviz format */
-void while_analyzer_print_cfg(const While_Analyzer *wa, FILE *fp);
-
 /* Free the analyzer structure */
 void while_analyzer_free(While_Analyzer *wa);
+
+/* Execute the analysis */
+void while_analyzer_exec(While_Analyzer *wa, const While_Analyzer_Exec_Opt *opt);
+
+/* Dump the abstract states of every program point through 'fp' */
+void while_analyzer_states_dump(const While_Analyzer *wa, FILE *fp);
+
+/* Dump the Control Flow Graph through 'fp', uses Graphviz format */
+void while_analyzer_cfg_dump(const While_Analyzer *wa, FILE *fp);
 
 #endif /* WHILE_AI_ANALYZER_ */

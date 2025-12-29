@@ -28,6 +28,8 @@ struct Abstract_Interval_Ctx {
     int64_t m;
     int64_t n;
     const Variables *vars;
+    /* Threshold points for widening, this array is sorted and contains always -INF and +INF */
+    int64_t *widening_points;
 };
 
 /* ================================== Interval ops ==================================== */

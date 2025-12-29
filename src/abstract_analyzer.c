@@ -148,6 +148,20 @@ static size_t worklist_dequeue(Worklist *wl) {
 
 /* ======================== Parametric interval domain Int(m,n) ======================= */
 static void while_analyzer_init_parametric_interval(While_Analyzer *wa, int64_t m, int64_t n) {
+
+    /* if m > n then this part will be skipped and the widening_points will be [-INF, +INF] */
+
+    /* TODO: Constant analysis */
+    /* Make a new lexer and then use the next collecting all the numerals */
+
+    /* TODO: Constant propagation */
+    /*
+    Call while_analyzer_init with the interval configuration [m,n] = [1,-1].
+    Call while_analyzer_exec and then for each state collect the constants [k,k].
+    Call while_analyzer_free.
+    */
+
+
     /* Domain context setup */
     wa->ctx = abstract_interval_ctx_init(m, n, &(wa->vars));
 
@@ -200,6 +214,7 @@ While_Analyzer *while_analyzer_init(const char *src_path, const While_Analyzer_O
     parser_free_ast_node(ast);
 
     /* Set the vars present in the input program in wa->vars */
+    /* TODO: Here I can build a new lexer and collect all the VAR tokens */
     set_vars(wa);
 
     /* Domain specific init */
@@ -297,13 +312,16 @@ void while_analyzer_exec(While_Analyzer *wa, const While_Analyzer_Exec_Opt *opt)
         }
     }
 
+}
+
+void while_analyzer_states_dump(const While_Analyzer *wa, FILE *fp) {
     for (size_t i = 0; i < wa->cfg->count; ++i) {
-        printf("[P%zu]\n", i);
-        wa->ops->state_print(wa->ctx, wa->state[i], opt->fp);
+        fprintf(fp, "[P%zu]\n", i);
+        wa->ops->state_print(wa->ctx, wa->state[i], fp);
     }
 }
 
-void while_analyzer_print_cfg(const While_Analyzer *wa, FILE *fp) {
+void while_analyzer_cfg_dump(const While_Analyzer *wa, FILE *fp) {
     cfg_print_graphviz(wa->cfg, fp);
 }
 
@@ -320,4 +338,3 @@ void while_analyzer_free(While_Analyzer *wa) {
     free(wa->vars.var);
     free(wa);
 }
-
