@@ -2,14 +2,14 @@
 #include "lang/cfg.h"
 #include "lang/parser.h"
 #include "common.h"
+#include "abstract_domain.h"
 #include "domain/abstract_interval_domain.h"
+#include "wrappers/abstract_interval_domain_wrap.h"
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
-typedef void Abstract_State;
-typedef void Abstract_Dom_Ctx;
+#include <assert.h>
 
 struct While_Analyzer {
     /* Control Flow Graph of the input program, contains the program points (the nodes) */
@@ -33,20 +33,8 @@ struct While_Analyzer {
     /* Source code of the input program */
     char *src;
 
-    /* Functions needed for the analysis, dynamically setted depending on the domain */
-    struct {
-        void (*ctx_free) (Abstract_Dom_Ctx *ctx);
-        void (*state_free) (Abstract_State *s);
-        void (*state_set_bottom) (const Abstract_Dom_Ctx *ctx, Abstract_State *s);
-        void (*state_set_top) (const Abstract_Dom_Ctx *ctx, Abstract_State *s);
-        void (*state_print) (const Abstract_Dom_Ctx *ctx, const Abstract_State *s, FILE *fp);
-
-        Abstract_State *(*exec_command) (const Abstract_Dom_Ctx *ctx, const Abstract_State *s, const AST_Node *command);
-        bool (*state_leq) (const Abstract_Dom_Ctx *ctx, const Abstract_State *s1, const Abstract_State *s2);
-        Abstract_State *(*union_) (const Abstract_Dom_Ctx *ctx, const Abstract_State *s1, const Abstract_State *s2);
-        Abstract_State *(*widening) (const Abstract_Dom_Ctx *ctx, const Abstract_State *s1, const Abstract_State *s2);
-        Abstract_State *(*narrowing) (const Abstract_Dom_Ctx *ctx, const Abstract_State *s1, const Abstract_State *s2);
-    } func;
+    /* Operations vtable */
+    const Abstract_Dom_Ops *ops;
 };
 
 /* ================================ Vars dynamic array  =============================== */
@@ -158,8 +146,25 @@ static size_t worklist_dequeue(Worklist *wl) {
 
 /* ==================================================================================== */
 
+/* ======================== Parametric interval domain Int(m,n) ======================= */
+static void while_analyzer_init_parametric_interval(While_Analyzer *wa, int64_t m, int64_t n) {
+    /* Domain context setup */
+    wa->ctx = abstract_interval_ctx_init(m, n, &(wa->vars));
+
+    /* Alloc abstract states for all program points */
+    wa->state = malloc(sizeof(Abstract_State *) * wa->cfg->count);
+
+    for (size_t i = 0; i < wa->cfg->count; ++i) {
+        wa->state[i] = (Abstract_State*) abstract_interval_state_init(wa->ctx);
+    }
+
+    /* Link all domain functions */
+    wa->ops = &abstract_interval_ops;
+}
+/* ==================================================================================== */
+
 /* Default init for all types of domain */
-static While_Analyzer *while_analyzer_init(const char *src_path) {
+While_Analyzer *while_analyzer_init(const char *src_path, const While_Analyzer_Opt *opt) {
     /* Open source file */
     FILE *fp = fopen(src_path, "r");
 
@@ -197,15 +202,28 @@ static While_Analyzer *while_analyzer_init(const char *src_path) {
     /* Set the vars present in the input program in wa->vars */
     set_vars(wa);
 
+    /* Domain specific init */
+    switch (opt->type) {
+    case WHILE_ANALYZER_PARAMETRIC_INTERVAL:
+        {
+            int64_t m = opt->as.parametric_interval.m;
+            int64_t n = opt->as.parametric_interval.n;
+            while_analyzer_init_parametric_interval(wa, m, n);
+            break;
+        }
+    default:
+        assert(0 && "UNREACHABLE");
+    }
+
     return wa;
 }
 
 void while_analyzer_exec(While_Analyzer *wa) {
 
     /* Init the abstract states (Top for P0 and Bottom the others) */
-    wa->func.state_set_top(wa->ctx, wa->state[0]);
+    wa->ops->state_set_top(wa->ctx, wa->state[0]);
     for (size_t i = 1; i < wa->cfg->count; ++i) {
-        wa->func.state_set_bottom(wa->ctx, wa->state[i]);
+        wa->ops->state_set_bottom(wa->ctx, wa->state[i]);
     }
 
     /* CFG graphviz */
@@ -241,30 +259,30 @@ void while_analyzer_exec(While_Analyzer *wa) {
 
                 switch (edge.type) {
                 case EDGE_ASSIGN:
-                    states[i] = wa->func.exec_command(wa->ctx, wa->state[pred], edge.as.assign);
+                    states[i] = wa->ops->exec_command(wa->ctx, wa->state[pred], edge.as.assign);
                     break;
                 case EDGE_GUARD:
-                    states[i] = wa->func.exec_command(wa->ctx, wa->state[pred], edge.as.guard.condition);
+                    states[i] = wa->ops->exec_command(wa->ctx, wa->state[pred], edge.as.guard.condition);
                     break;
                 case EDGE_SKIP:
-                    states[i] = wa->func.exec_command(wa->ctx, wa->state[pred], edge.as.skip);
+                    states[i] = wa->ops->exec_command(wa->ctx, wa->state[pred], edge.as.skip);
                     break;
                 }
             }
 
             /* Union of the results */
-            Abstract_State *acc = wa->func.union_(wa->ctx, states[0], states[0]);
+            Abstract_State *acc = wa->ops->union_(wa->ctx, states[0], states[0]);
             Abstract_State *prev_acc = NULL;
             for (size_t i = 1; i < node.preds_count; ++i) {
                 prev_acc = acc;
-                acc = wa->func.union_(wa->ctx, acc, states[i]);
-                wa->func.state_free(prev_acc);
+                acc = wa->ops->union_(wa->ctx, acc, states[i]);
+                wa->ops->state_free(prev_acc);
             }
 
             /* If state changed signal the node dependencies */
-            bool state_changed = !(wa->func.state_leq(wa->ctx, wa->state[id], acc) && wa->func.state_leq(wa->ctx, acc, wa->state[id]));
+            bool state_changed = !(wa->ops->state_leq(wa->ctx, wa->state[id], acc) && wa->ops->state_leq(wa->ctx, acc, wa->state[id]));
             if (state_changed) {
-                wa->func.state_free(wa->state[id]);
+                wa->ops->state_free(wa->state[id]);
                 wa->state[id] = acc;
 
                 for (size_t i = 0; i < node.edge_count; ++i) {
@@ -272,12 +290,12 @@ void while_analyzer_exec(While_Analyzer *wa) {
                     worklist_enqueue(&wl, dep);
                 }
             } else {
-                wa->func.state_free(acc);
+                wa->ops->state_free(acc);
             }
 
             /* States free */
             for (size_t i = 0; i < node.preds_count; ++i) {
-                wa->func.state_free(states[i]);
+                wa->ops->state_free(states[i]);
             }
             free(states);
         }
@@ -285,7 +303,7 @@ void while_analyzer_exec(While_Analyzer *wa) {
 
     for (size_t i = 0; i < wa->cfg->count; ++i) {
         printf("[P%zu]\n", i);
-        wa->func.state_print(wa->ctx, wa->state[i], stdout);
+        wa->ops->state_print(wa->ctx, wa->state[i], stdout);
     }
 }
 
@@ -293,86 +311,13 @@ void while_analyzer_free(While_Analyzer *wa) {
 
     /* Free abstract states */
     for (size_t i = 0; i < wa->cfg->count; ++i) {
-        wa->func.state_free(wa->state[i]);
+        wa->ops->state_free(wa->state[i]);
     }
     free(wa->state);
-    wa->func.ctx_free(wa->ctx);
+    wa->ops->ctx_free(wa->ctx);
     free(wa->src);
     cfg_free(wa->cfg);
     free(wa->vars.var);
     free(wa);
 }
 
-/* ======================== Parametric interval domain Int(m,n) ======================= */
-
-
-/* ================================ Function wrappers ================================= */
-void abstract_interval_state_free_wrapper(Abstract_State *s) {
-    abstract_interval_state_free((Interval *) s);
-}
-
-void abstract_interval_ctx_free_wrapper(Abstract_Dom_Ctx *ctx) {
-    abstract_interval_ctx_free((Abstract_Interval_Ctx *)ctx);
-}
-
-void abstract_interval_state_set_bottom_wrapper(const Abstract_Dom_Ctx *ctx, Abstract_State *s) {
-    abstract_interval_state_set_bottom((const Abstract_Interval_Ctx *) ctx, (Interval *) s);
-}
-
-void abstract_interval_state_set_top_wrapper(const Abstract_Dom_Ctx *ctx, Abstract_State *s) {
-    abstract_interval_state_set_top((const Abstract_Interval_Ctx *) ctx, (Interval *) s);
-}
-
-void abstract_interval_state_print_wrapper(const Abstract_Dom_Ctx *ctx, const Abstract_State *s, FILE *fp) {
-    abstract_interval_state_print((const Abstract_Interval_Ctx *) ctx, (const Interval *) s, fp);
-}
-
-Abstract_State *abstract_interval_state_exec_command_wrapper(const Abstract_Dom_Ctx *ctx, const Abstract_State *s, const AST_Node *command) {
-    return (Abstract_State *) abstract_interval_state_exec_command((const Abstract_Interval_Ctx *) ctx, (const Interval *) s, command);
-}
-
-bool abstract_interval_state_leq_wrapper(const Abstract_Dom_Ctx *ctx, const Abstract_State *s1, const Abstract_State *s2) {
-    return abstract_interval_state_leq((const Abstract_Interval_Ctx *) ctx, (const Interval *) s1, (const Interval *) s2);
-}
-
-Abstract_State *abstract_interval_state_union_wrapper(const Abstract_Dom_Ctx *ctx, const Abstract_State *s1, const Abstract_State *s2) {
-    return (Abstract_State *) abstract_interval_state_union((const Abstract_Interval_Ctx *) ctx, (const Interval *) s1, (const Interval *) s2);
-}
-
-Abstract_State *abstract_interval_state_widening_wrapper(const Abstract_Dom_Ctx *ctx, const Abstract_State *s1, const Abstract_State *s2) {
-    return (Abstract_State *) abstract_interval_state_widening((const Abstract_Interval_Ctx *) ctx, (const Interval *) s1, (const Interval *) s2);
-}
-
-Abstract_State *abstract_interval_state_narrowing_wrapper(const Abstract_Dom_Ctx *ctx, const Abstract_State *s1, const Abstract_State *s2) {
-    return (Abstract_State *) abstract_interval_state_narrowing((const Abstract_Interval_Ctx *) ctx, (const Interval *) s1, (const Interval *) s2);
-}
-/* ==================================================================================== */
-
-While_Analyzer *while_analyzer_init_parametric_interval(const char *src_path, int64_t m, int64_t n) {
-    While_Analyzer *wa = while_analyzer_init(src_path);
-
-    /* Domain context setup */
-    wa->ctx = abstract_interval_ctx_init(m, n, &(wa->vars));
-
-    /* Alloc abstract states for all program points */
-    wa->state = malloc(sizeof(Abstract_State *) * wa->cfg->count);
-
-    for (size_t i = 0; i < wa->cfg->count; ++i) {
-        wa->state[i] = (Abstract_State*) abstract_interval_state_init(wa->ctx);
-    }
-
-    /* Link all domain functions */
-    wa->func.ctx_free = abstract_interval_ctx_free_wrapper;
-    wa->func.state_free = abstract_interval_state_free_wrapper;
-    wa->func.state_set_bottom = abstract_interval_state_set_bottom_wrapper;
-    wa->func.state_set_top = abstract_interval_state_set_top_wrapper;
-    wa->func.state_print = abstract_interval_state_print_wrapper;
-    wa->func.exec_command = abstract_interval_state_exec_command_wrapper;
-    wa->func.state_leq = abstract_interval_state_leq_wrapper;
-    wa->func.union_ = abstract_interval_state_union_wrapper;
-    wa->func.widening = abstract_interval_state_widening_wrapper;
-    wa->func.narrowing = abstract_interval_state_narrowing_wrapper;
-
-    return wa;
-}
-/* ==================================================================================== */

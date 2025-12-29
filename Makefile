@@ -3,8 +3,8 @@ CFLAGS=-Wall -Wextra -std=c99 -pedantic -Werror=vla -ggdb
 
 all: main test
 
-main: main.c src/lang/lexer.c src/common.c src/lang/parser.c src/lang/cfg.c src/domain/abstract_interval_domain.c src/abstract_analyzer.c
-	$(CC) $(CFLAGS) main.c src/lang/lexer.c src/common.c src/lang/parser.c src/lang/cfg.c src/domain/abstract_interval_domain.c src/abstract_analyzer.c -o main
+main: main.c src/lang/lexer.c src/common.c src/lang/parser.c src/lang/cfg.c src/domain/abstract_interval_domain.c src/abstract_analyzer.c src/wrappers/abstract_interval_domain_wrap.c
+	$(CC) $(CFLAGS) main.c src/lang/lexer.c src/common.c src/lang/parser.c src/lang/cfg.c src/domain/abstract_interval_domain.c src/abstract_analyzer.c src/wrappers/abstract_interval_domain_wrap.c -o main
 
 test: abstract_interval_domain_test
 
