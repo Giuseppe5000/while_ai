@@ -28,9 +28,22 @@ statements:
 ```
 
 ## TODO
+- [ ] Test and check correctness of arithmetic ops in the domain (especially division).
+
+Widening:
+    - [ ] Implement `abstract_interval_state_widening` with thresholds (just passing a list of numbers containing -INF and +INF, maybe in the ctx).
+    - [ ] Setup the widening in the analysis, selecting the widening points (the threshold will be taken from contants in the program and constants after constant propagation).
+
+Narrowing:
+    - [ ] Implement `abstract_interval_state_narrowing` and use it in the worklist algorithm.
+    - [ ] Setup the narrowing in the analysis, applied a finite number of times.
+
+- [ ] Implement abstract tests in `abstract_interval_state_exec_command`.
+
+Other things:
 - [ ] Lexer doesn't tokenize negative numbers (-x).
 - [ ] Current variable darray stores only vars that are lvalue, so if a var is used only as rvalue (undefined variable) then this causes UB.
-- [ ] Implement the arithmetic ops in the domain (doing also testing).
-- [ ] Implement `abstract_interval_state_exec_command` (three possible commands).
-- [ ] Create the worklist (a queue) in `abstract_analyzer.c` and compute the fixpoint (without widening/narrowing).
-- [ ] Implement `abstract_interval_state_widening` and `abstract_interval_state_narrowing` and use it in the worklist algorithm.
+- [ ] Check TODOs in the code.
+
+
+
