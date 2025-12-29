@@ -7,8 +7,6 @@ int main(void) {
 
     While_Analyzer_Opt opt = {
         .type = WHILE_ANALYZER_PARAMETRIC_INTERVAL,
-        .widening_delay = -1,
-        .descending_steps = 0,
         .as = {
             .parametric_interval = {
                 .m = -100,
@@ -16,8 +14,14 @@ int main(void) {
             },
         },
     };
-
     While_Analyzer *wa = while_analyzer_init(src_path, &opt);
-    while_analyzer_exec(wa);
+
+    While_Analyzer_Exec_Opt exec_opt = {
+        .fp = stdout,
+        .widening_delay = SIZE_MAX,
+        .descending_steps = 0,
+    };
+    while_analyzer_exec(wa, &exec_opt);
+
     while_analyzer_free(wa);
 }

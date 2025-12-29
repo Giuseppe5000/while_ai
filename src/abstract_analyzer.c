@@ -218,7 +218,7 @@ While_Analyzer *while_analyzer_init(const char *src_path, const While_Analyzer_O
     return wa;
 }
 
-void while_analyzer_exec(While_Analyzer *wa) {
+void while_analyzer_exec(While_Analyzer *wa, const While_Analyzer_Exec_Opt *opt) {
 
     /* Init the abstract states (Top for P0 and Bottom the others) */
     wa->ops->state_set_top(wa->ctx, wa->state[0]);
@@ -303,7 +303,7 @@ void while_analyzer_exec(While_Analyzer *wa) {
 
     for (size_t i = 0; i < wa->cfg->count; ++i) {
         printf("[P%zu]\n", i);
-        wa->ops->state_print(wa->ctx, wa->state[i], stdout);
+        wa->ops->state_print(wa->ctx, wa->state[i], opt->fp);
     }
 }
 
