@@ -1,14 +1,10 @@
 CC=gcc
 CFLAGS=-Wall -Wextra -std=c99 -pedantic -Werror=vla -ggdb
 
-all: main cli test
-
-main: main.c src/lang/lexer.c src/common.c src/lang/parser.c src/lang/cfg.c src/domain/abstract_interval_domain.c src/abstract_analyzer.c src/domain/wrappers/abstract_interval_domain_wrap.c
-	$(CC) $(CFLAGS) main.c src/lang/lexer.c src/common.c src/lang/parser.c src/lang/cfg.c src/domain/abstract_interval_domain.c src/abstract_analyzer.c src/domain/wrappers/abstract_interval_domain_wrap.c -o main
+all: cli test
 
 cli: cli.c src/lang/lexer.c src/common.c src/lang/parser.c src/lang/cfg.c src/domain/abstract_interval_domain.c src/abstract_analyzer.c src/domain/wrappers/abstract_interval_domain_wrap.c
 	$(CC) $(CFLAGS) cli.c src/lang/lexer.c src/common.c src/lang/parser.c src/lang/cfg.c src/domain/abstract_interval_domain.c src/abstract_analyzer.c src/domain/wrappers/abstract_interval_domain_wrap.c -o cli
-
 
 test: abstract_interval_domain_test
 

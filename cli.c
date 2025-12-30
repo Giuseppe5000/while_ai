@@ -1,6 +1,9 @@
 #include "include/abstract_analyzer.h"
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
+#include <stdbool.h>
+#include <ctype.h>
 
 void print_help(char **argv) {
     fprintf(stderr, "Usage: %s COMMAND [ARGS]\n\n", argv[0]);
@@ -28,13 +31,13 @@ void print_help_analyze(char **argv) {
     fprintf(stderr, "  DOMAIN          Abstract domain (available domains are listed below).\n\n");
 
     fprintf(stderr, "Domains:\n");
-    fprintf(stderr, "  p_interval      Parametric Interval domain.\n\n");
+    fprintf(stderr, "  pinterval       Parametric Interval domain.\n\n");
 
     fprintf(stderr, "Run '%s analyze DOMAIN' for more information on a specific domain.\n", argv[0]);
 }
 
 void print_help_analyze_p_interval(char **argv) {
-    fprintf(stderr, "Usage: %s analyze p_interval [OPTIONS] SOURCE\n\n", argv[0]);
+    fprintf(stderr, "Usage: %s analyze p_interval SOURCE [OPTIONS]\n\n", argv[0]);
     fprintf(stderr, "TODO: Parametric interval exaplain.\n\n");
 
     fprintf(stderr, "Options:\n");
@@ -47,20 +50,59 @@ void print_help_analyze_p_interval(char **argv) {
     fprintf(stderr, "  SOURCE          Path to the source file (While language).\n");
 }
 
-const char *get_opt(const char *opt, size_t i, int argc, char **argv) {
-    return NULL; /* TODO */
+/* If 'opt' string is in argv[i] ... argv[argc-2] then returns the index of the next string in argv (the option) */
+int get_opt(const char *opt, int i, int argc, char **argv) {
+    while (i < argc) {
+        if (strcmp(opt, argv[i]) == 0) {
+            /* If there is the opt but not the value */
+            if (i+1 == argc) {
+                return i; /* Returns the opt if there is no value */
+            }
+            return i+1;
+        }
+        i++;
+    }
+    return -1;
 }
 
-int64_t parse_int64(const char *c) {
-    return 0; /* TODO */
+bool parse_int64(const char *arg, int64_t *n) {
+    if (isdigit(*arg) || *arg == '-') {
+        const char *start = arg;
+        arg++;
+
+        while (isdigit(*arg)) {
+            arg++;
+        }
+
+        if (*arg != '\0') {
+            return false;
+        }
+
+        *n = strtoll(start, NULL, 10);
+        return true;
+    }
+    return false;
 }
 
-size_t parse_size(const char *c) {
-    return 0; /* TODO */
+bool parse_size(const char *arg, size_t *n) {
+    if (isdigit(*arg)) {
+        const char *start = arg;
+
+        while (isdigit(*arg)) {
+            arg++;
+        }
+
+        if (*arg != '\0') {
+            return false;
+        }
+
+        *n = strtoull(start, NULL, 10);
+        return true;
+    }
+    return false;
 }
 
 void handle_cfg_cmd(int argc, char **argv) {
-
     /* Help handling */
     if (argc == 2) {
         print_help_cfg(argv);
@@ -78,13 +120,12 @@ void handle_cfg_cmd(int argc, char **argv) {
 }
 
 void handle_analyze_cmd(int argc, char **argv) {
-
     /* Help handling */
     if (argc == 2) {
         print_help_analyze(argv);
     }
     else if (argc == 3) {
-        if (strcmp(argv[2], "p_interval") == 0) {
+        if (strcmp(argv[2], "pinterval") == 0) {
             print_help_analyze_p_interval(argv);
         }
         else {
@@ -92,7 +133,7 @@ void handle_analyze_cmd(int argc, char **argv) {
         }
     }
     /* Parametric interval handling */
-    else if (strcmp(argv[2], "p_interval") == 0) {
+    else if (strcmp(argv[2], "pinterval") == 0) {
         While_Analyzer_Opt opt = {
             .type = WHILE_ANALYZER_PARAMETRIC_INTERVAL,
             .as = {
@@ -111,23 +152,45 @@ void handle_analyze_cmd(int argc, char **argv) {
         const char *src_path = argv[3];
 
         /* get_opt return NULL if not found or the pointer to the start of the flag */
-        const char *m = get_opt("m", 4, argc, argv);
-        const char *n = get_opt("n", 4, argc, argv);
-        const char *wdelay = get_opt("wdelay", 4, argc, argv);
-        const char *dsteps = get_opt("dsteps", 4, argc, argv);
+        int m = get_opt("-m", 4, argc, argv);
+        int n = get_opt("-n", 4, argc, argv);
+        int wdelay = get_opt("-wdelay", 4, argc, argv);
+        int dsteps = get_opt("-dsteps", 4, argc, argv);
 
-        if (m != NULL) {
-            opt.as.parametric_interval.m = parse_int64(m);
+        if (m != -1) {
+            if (!parse_int64(argv[m], &opt.as.parametric_interval.m)) {
+                fprintf(stderr, "Parsing error: (-m) INT expected.\n");
+                return;
+            }
         }
-        if (n != NULL) {
-            opt.as.parametric_interval.n = parse_int64(n);
+        if (n != -1) {
+            if (!parse_int64(argv[n], &opt.as.parametric_interval.n)) {
+                fprintf(stderr, "Parsing error: (-n) INT expected.\n");
+                return;
+            }
         }
-        if (wdelay != NULL) {
-            exec_opt.widening_delay = parse_size(wdelay);
+        if (wdelay != -1) {
+            if (!parse_size(argv[wdelay], &exec_opt.widening_delay)) {
+                fprintf(stderr, "Parsing error: (-wdelay) N expected.\n");
+                return;
+            }
         }
-        if (dsteps != NULL) {
-            exec_opt.descending_steps = parse_size(dsteps);
+        if (dsteps != -1) {
+            if (!parse_size(argv[dsteps], &exec_opt.descending_steps)) {
+                fprintf(stderr, "Parsing error: (-dsteps) N expected.\n");
+                return;
+            }
         }
+
+        printf("\n/========================\\\n");
+        printf("|    Analysis options    |\n");
+        printf("|========================|\n");
+        printf("  domain : pinterval\n");
+        printf("  m      : %s\n", opt.as.parametric_interval.m == INT64_MIN ? "-INF" : argv[m]);
+        printf("  n      : %s\n", opt.as.parametric_interval.n == INT64_MAX ? "+INF" : argv[n]);
+        printf("  wdelay : %s\n", exec_opt.widening_delay == SIZE_MAX ? "disabled" : argv[wdelay]);
+        printf("  dsteps : %zu\n", exec_opt.descending_steps);
+        printf("\\========================/\n\n");
 
         While_Analyzer *wa = while_analyzer_init(src_path, &opt);
         while_analyzer_exec(wa, &exec_opt);
@@ -142,10 +205,8 @@ void handle_analyze_cmd(int argc, char **argv) {
 int main(int argc, char **argv) {
     if (argc < 2) {
         print_help(argv);
-        return 0;
     }
-
-    if (strcmp(argv[1], "cfg") == 0) {
+    else  if (strcmp(argv[1], "cfg") == 0) {
         handle_cfg_cmd(argc, argv);
     }
     else if (strcmp(argv[1], "analyze") == 0) {
