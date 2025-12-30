@@ -13,10 +13,10 @@ And you'll find an executable file named `cli` (it has an integrated help, just 
 ## Abstract Domain
 There is only one abstract domain: the **Parametric Interval** $\text{Int}_{m,n}$.
 
-Given $m, n \in \mathbb{Z} \cup {-\infty, +\infty}$,\
+Given $m, n \in \mathbb{Z} \cup \lbrace -\infty, +\infty \rbrace$,\
 the domain is defined as:
 
-$\text{Int}_{m,n} \triangleq \{\varnothing, \mathbb{Z} \} \cup \{ [k, k] \mid k \in \mathbb{Z} \} \cup \{ [a, b] \mid a < b, [a, b] \subseteq [m, n] \} \cup \{ (-\infty, k] \mid k \in [m, n] \} \cup \{ [k, +\infty) \mid k \in [m, n] \}$
+$\text{Int}_{m,n} \triangleq \lbrace\varnothing, \mathbb{Z} \rbrace \cup \lbrace [k, k] \mid k \in \mathbb{Z} \rbrace \cup \lbrace [a, b] \mid a < b, [a, b] \subseteq [m, n] \rbrace \cup \lbrace (-\infty, k] \mid k \in [m, n] \rbrace \cup \lbrace [k, +\infty) \mid k \in [m, n] \rbrace$
 
 Some notes about $m, n$:
   - With $(m, n) = (-\infty, +\infty)$ the domain will become the standard interval domain (Int/Box).
