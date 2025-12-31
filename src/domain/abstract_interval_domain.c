@@ -401,7 +401,6 @@ static Interval interval_div(const Abstract_Interval_Ctx *ctx, Interval i1, Inte
 static Interval interval_widening(const Abstract_Interval_Ctx *ctx, Interval i1, Interval i2) {
 
     /* Bottom handling */
-    if (i1.type == INTERVAL_BOTTOM && i2.type == INTERVAL_BOTTOM) return i1;
     if (i1.type == INTERVAL_BOTTOM) return i2;
     if (i2.type == INTERVAL_BOTTOM) return i1;
 
