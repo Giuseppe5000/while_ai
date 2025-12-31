@@ -62,7 +62,7 @@ Exec:
 
 Other things:
 - [ ] Lexer doesn't tokenize negative numbers (-x).
-- [ ] Current variable darray stores only vars that are lvalue, so if a var is used only as rvalue (undefined variable) then this causes UB.
+- [x] Current variable darray stores only vars that are lvalue, so if a var is used only as rvalue (undefined variable) then this causes UB.
 - [ ] Check TODOs in the code.
 
 
