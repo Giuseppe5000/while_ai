@@ -29,6 +29,7 @@ void constant_push_unique(Constants *c, int64_t constant);
 
 /* Same as originals but exits on OOM */
 void *xmalloc(size_t size);
+void *xcalloc(size_t nmemb, size_t size);
 void *xrealloc(void *ptr, size_t size);
 
 #endif /* WHILE_AI_UTILS_ */

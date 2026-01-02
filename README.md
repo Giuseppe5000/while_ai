@@ -50,7 +50,7 @@ statements:
 Widening:
 - [x] Implement `abstract_interval_state_widening` with thresholds (just passing a list of numbers containing -INF and +INF, maybe in the ctx).
 - [x] Setup the widening in the analysis, selecting the widening points (the threshold will be taken from contants in the program and constants after constant propagation).
-- [ ] Check if the way of counting the steps in the exec is correct.
+- [x] Check if the way of counting the steps in the exec is correct, if widen_delay = 5, then the widen happens at the sixth iteration.
 
 Narrowing:
 - [ ] Implement `abstract_interval_state_narrowing` and use it in the worklist algorithm.

@@ -147,6 +147,8 @@ static void constant_collect(const char *src_path, Constants *constants, size_t 
 
 /* ================================== Worklist queue ================================== */
 
+/* TODO: performance can be optimized with a doubly linked list */
+
 /* The worklist is simply a queue (implemented ad linked list) */
 typedef struct Program_Point_Node Program_Point_Node;
 struct Program_Point_Node {
@@ -288,7 +290,7 @@ void while_analyzer_exec(While_Analyzer *wa, const While_Analyzer_Exec_Opt *opt)
     }
 
     /* Create a counter for each point (needed for opt->widening_delay) */
-    size_t *step_count = xmalloc(sizeof(size_t)*wa->cfg->count);
+    size_t *step_count = xcalloc(wa->cfg->count, sizeof(size_t));
 
     /* === Worklist algorithm === */
     Worklist wl = {0};
