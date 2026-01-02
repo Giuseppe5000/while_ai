@@ -72,6 +72,9 @@ bool parse_int64(const char *arg, void *n) {
 
 bool parse_size(const char *arg, void *n) {
     size_t *n_size = (size_t *)n;
+    while (isspace(*arg)) {
+        arg++;
+    }
     if (*arg == '-') return false;
     char *endptr;
     *n_size = strtoull(arg, &endptr, 10);
@@ -165,27 +168,25 @@ void handle_analyze_cmd(int argc, char **argv) {
         
         /* Check options */
         for (int i = 4; i < argc; i+=2) {
-            bool value_found = false;
+
             if (get_opt(&opt.as.parametric_interval.m, "--m", &m_found, parse_int64, i, argc, argv)) {
-                value_found = true;
+                continue;
             }
             if (get_opt(&opt.as.parametric_interval.n, "--n", &n_found, parse_int64, i, argc, argv)) {
-                value_found = true;
+                continue;
             }
             if (get_opt(&exec_opt.widening_delay, "--wdelay", &wdelay_found, parse_size, i, argc, argv)) {
-                value_found = true;
+                continue;
             }
             if (get_opt(&exec_opt.descending_steps, "--dsteps", &dsteps_found, parse_size, i, argc, argv)) {
-                value_found = true;
+                continue;
             }
             if (get_opt(&exec_opt.init_state_path, "--init", &init_found, parse_string, i, argc, argv)) {
-                value_found = true;
+                continue;
             }
 
-            if (!value_found) {
-                fprintf(stderr, "Parsing error: (%s) invalid option.\n", argv[i]);
-                exit(1);
-            }
+            fprintf(stderr, "Parsing error: (%s) invalid option.\n", argv[i]);
+            exit(1);
         }
 
         /* Analysis */
