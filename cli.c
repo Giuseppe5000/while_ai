@@ -109,7 +109,7 @@ bool get_opt(void *opt_val, const char *opt, bool *opt_found, parse_opt_val pars
 }
 
 void handle_cfg_cmd(int argc, char **argv) {
-    /* Help handling */
+    // Help handling
     if (argc == 2) {
         print_help_cfg(argv);
     }
@@ -128,7 +128,7 @@ void handle_cfg_cmd(int argc, char **argv) {
 }
 
 void handle_analyze_cmd(int argc, char **argv) {
-    /* Help handling */
+    // Help handling
     if (argc == 2) {
         print_help_analyze(argv);
     }
@@ -140,7 +140,7 @@ void handle_analyze_cmd(int argc, char **argv) {
             print_help_analyze(argv);
         }
     }
-    /* Parametric interval handling */
+    // Parametric interval handling
     else if (strcmp(argv[2], "pinterval") == 0) {
         While_Analyzer_Opt opt = {
             .type = WHILE_ANALYZER_PARAMETRIC_INTERVAL,
@@ -166,7 +166,7 @@ void handle_analyze_cmd(int argc, char **argv) {
         bool dsteps_found = false;
         bool init_found = false;
         
-        /* Check options */
+        // Check options
         for (int i = 4; i < argc; i+=2) {
 
             if (get_opt(&opt.as.parametric_interval.m, "--m", &m_found, parse_int64, i, argc, argv)) {
@@ -189,7 +189,7 @@ void handle_analyze_cmd(int argc, char **argv) {
             exit(1);
         }
 
-        /* Analysis */
+        // Analysis
         printf("\n/========================\\\n");
         printf("|    Analysis options    |\n");
         printf("|========================|\n");
