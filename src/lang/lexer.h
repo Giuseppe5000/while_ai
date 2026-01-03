@@ -10,13 +10,13 @@ enum Token_Type {
     TOKEN_NUM,
     TOKEN_VAR,
 
-    /* Aexp */
+    // Aexp
     TOKEN_PLUS,
     TOKEN_MINUS,
     TOKEN_MULT,
     TOKEN_DIV,
 
-    /* Bexp */
+    // Bexp
     TOKEN_TRUE,
     TOKEN_FALSE,
     TOKEN_EQ,
@@ -24,7 +24,7 @@ enum Token_Type {
     TOKEN_NOT,
     TOKEN_AND,
 
-    /* Stm */
+    // Stm
     TOKEN_ASSIGN,
     TOKEN_SKIP,
     TOKEN_SEMICOL,
@@ -47,19 +47,17 @@ typedef struct {
 
 typedef struct Lexer Lexer;
 
-/*
-Construct a new lexer.
-'src' must be a string buffer and must be null terminated.
-*/
+// Construct a new lexer.
+// 'src' must be a string buffer and must be null terminated.
 Lexer *lex_init(const char *src);
 
-/* Get next token */
+// Get next token
 Token lex_next(Lexer *lex);
 
-/* Get next token, without consuming it */
+// Get next token, without consuming it
 Token lex_peek(Lexer *lex);
 
-/* Free the lexer */
+// Free the lexer
 void lex_free(Lexer *lex);
 
-#endif /* WHILE_AI_LEXER_ */
+#endif // WHILE_AI_LEXER_

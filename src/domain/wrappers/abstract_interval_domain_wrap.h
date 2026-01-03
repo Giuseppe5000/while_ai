@@ -5,4 +5,4 @@
 
 extern const Abstract_Dom_Ops abstract_interval_ops;
 
-#endif /* WHILE_AI_ABSTRACT_INTERVAL_DOM_WRAP_ */
+#endif // WHILE_AI_ABSTRACT_INTERVAL_DOM_WRAP_

@@ -9,16 +9,14 @@ struct Abstract_Interval_Ctx {
     int64_t m;
     int64_t n;
     Variables vars;
-    /* Threshold points for widening, this array is sorted and contains always -INF and +INF */
+    // Threshold points for widening, this array is sorted and contains always -INF and +INF
     Constants widening_points;
 };
 
 /* ================================== Interval ops ==================================== */
 
-/*
-Check if interval 'i1' is a less than or equal to interval 'i2'.
-Returns true if i1 <= i2 (if i1 is contained in i2), false otherwise.
-*/
+// Check if interval 'i1' is a less than or equal to interval 'i2'.
+// Returns true if i1 <= i2 (if i1 is contained in i2), false otherwise.
 static bool interval_leq(Interval i1, Interval i2) {
     if (i1.type == INTERVAL_BOTTOM && i2.type == INTERVAL_BOTTOM) {
         return true;
@@ -34,31 +32,29 @@ static bool interval_leq(Interval i1, Interval i2) {
     }
 }
 
-/*
-Create an interval beloging to the domain Int(m,n).
-
-NOTE: if [a, b] does not belong to the domain a correct over-approximation will be returned.
-*/
+// Create an interval beloging to the domain Int(m,n).
+//
+// NOTE: if [a, b] does not belong to the domain a correct over-approximation will be returned.
 static Interval interval_create(const Abstract_Interval_Ctx *ctx, int64_t a, int64_t b) {
     Interval i = {0};
     i.type = INTERVAL_STD;
     i.a = a;
     i.b = b;
 
-    /* Empty interval (Bottom) */
+    // Empty interval (Bottom)
     if (a > b) {
         i.type = INTERVAL_BOTTOM;
         return i;
     }
 
-    /* Top */
+    // Top
     if (a == INTERVAL_MIN_INF && b == INTERVAL_PLUS_INF) {
         return i;
     }
 
-    /* { [k,k] | k ∈ Z } */
+    // { [k,k] | k ∈ Z }
     if (a == b) {
-        /* Edge case: (-INF, -INF) or (INF,INF) => return Top */
+        // Edge case: (-INF, -INF) or (INF,INF) => return Top
         if (a == INTERVAL_MIN_INF || a == INTERVAL_PLUS_INF) {
             i.a = INTERVAL_MIN_INF;
             i.b = INTERVAL_PLUS_INF;
@@ -66,7 +62,7 @@ static Interval interval_create(const Abstract_Interval_Ctx *ctx, int64_t a, int
         return i;
     }
 
-    /* { [a,b] | a < b, [a,b] ⊆ [m,n] } */
+    // { [a,b] | a < b, [a,b] ⊆ [m,n] }
     if (a < b) {
         Interval i_mn = {
             .type = INTERVAL_STD,
@@ -79,74 +75,72 @@ static Interval interval_create(const Abstract_Interval_Ctx *ctx, int64_t a, int
         }
     }
 
-    /* { (-INF, k] | k ∈ [m, n] } */
+    // { (-INF, k] | k ∈ [m, n] }
     if (a == INTERVAL_MIN_INF && (b >= ctx->m && b <= ctx->n)) {
         return i;
     }
 
-    /* { [k, +INF) | k ∈ [m, n] } */
+    // { [k, +INF) | k ∈ [m, n] }
     if (b == INTERVAL_PLUS_INF && (a >= ctx->m && a <= ctx->n)) {
         return i;
     }
 
-    /* === [a,b] is not in the domain, looking for a correct over-approximation === */
+    // === [a,b] is not in the domain, looking for a correct over-approximation ===
 
-    /*
-    [a,b] < m => (-INF, m]
-
-    Checking if m <= n, because if m > n then the constant
-    propagation domain does not have intervals like (-INF, m].
-    */
+    // [a,b] < m => (-INF, m]
+    //
+    // Checking if m <= n, because if m > n then the constant
+    // propagation domain does not have intervals like (-INF, m].
     if (b < ctx->m && ctx->m <= ctx->n) {
         i.a = INTERVAL_MIN_INF;
         i.b = ctx->m;
         return i;
     }
 
-    /* [a,b] > n so [n, +INF) (Same check for constant prop. here) */
+    // [a,b] > n so [n, +INF) (Same check for constant prop. here)
     else if (a > ctx->n && ctx->m <= ctx->n) {
         i.a = ctx->n;
         i.b = INTERVAL_PLUS_INF;
         return i;
     }
 
-    /* [a,b] with 'm <= b <= n' and a < m => (-INF, b] */
+    // [a,b] with 'm <= b <= n' and a < m => (-INF, b]
     if (a < ctx->m && (b >= ctx->m && b <= ctx->n)) {
         i.a = INTERVAL_MIN_INF;
         return i;
     }
 
-    /* [a,b] with 'm <= a <= n' and b > n => [a, +INF) */
+    // [a,b] with 'm <= a <= n' and b > n => [a, +INF)
     if (b > ctx->n && (a >= ctx->m && a <= ctx->n)) {
         i.b = INTERVAL_PLUS_INF;
         return i;
     }
 
-    /* Otherwise return Top */
+    // Otherwise return Top
     i.a = INTERVAL_MIN_INF;
     i.b = INTERVAL_PLUS_INF;
     return i;
 }
 
 
-/* Returns the union of intervals 'a' and 'b' */
+// Returns the union of intervals 'a' and 'b'
 static Interval interval_union(const Abstract_Interval_Ctx *ctx, Interval i1, Interval i2) {
 
-    /* Bottom handling */
+    // Bottom handling
     if (i1.type == INTERVAL_BOTTOM) return i2;
     if (i2.type == INTERVAL_BOTTOM) return i1;
 
     int64_t min_a = i1.a >= i2.a ? i2.a : i1.a;
     int64_t max_b = i1.b >= i2.b ? i1.b : i2.b;
 
-    /* If [min_a, max_b] is not in the domain, the function will choose a correct over-approximation */
+    // If [min_a, max_b] is not in the domain, the function will choose a correct over-approximation
     return interval_create(ctx, min_a, max_b);
 }
 
-/* Returns the intersection of intervals 'a' and 'b' */
+// Returns the intersection of intervals 'a' and 'b'
 static Interval interval_intersect(const Abstract_Interval_Ctx *ctx, Interval i1, Interval i2) {
 
-    /* Bottom handling */
+    // Bottom handling
     if (i1.type == INTERVAL_BOTTOM) return i1;
     if (i2.type == INTERVAL_BOTTOM) return i2;
 
@@ -156,45 +150,45 @@ static Interval interval_intersect(const Abstract_Interval_Ctx *ctx, Interval i1
     return interval_create(ctx, max_a, min_b);
 }
 
-/* Addition checking overflow and INF */
+// Addition checking overflow and INF
 static int64_t safe_plus(int64_t a, int64_t b) {
 
-    /* Here there aren't cases like a = +INF and b = -INF because it can't happen by contruction */
+    // Here there aren't cases like a = +INF and b = -INF because it can't happen by contruction
     if (a == INTERVAL_PLUS_INF || b == INTERVAL_PLUS_INF) return INTERVAL_PLUS_INF;
     if (a == INTERVAL_MIN_INF || b == INTERVAL_MIN_INF) return INTERVAL_MIN_INF;
 
-    /* Check overflow: a + b > +INF */
+    // Check overflow: a + b > +INF
     if (b > 0 && a > INTERVAL_PLUS_INF - b) return INTERVAL_PLUS_INF;
 
-    /* Check underflow: a + b < -INF */
+    // Check underflow: a + b < -INF
     if (b < 0 && a < INTERVAL_MIN_INF - b) return INTERVAL_MIN_INF;
 
     return a + b;
 }
 
-/* Subtraction checking overflow and INF */
+// Subtraction checking overflow and INF
 static int64_t safe_minus(int64_t a, int64_t b) {
 
-    /* Here there aren't cases like a = +INF and b = +INF because it can't happen by contruction */
+    // Here there aren't cases like a = +INF and b = +INF because it can't happen by contruction
     if (a == INTERVAL_PLUS_INF || b == INTERVAL_MIN_INF) return INTERVAL_PLUS_INF;
     if (a == INTERVAL_MIN_INF || b == INTERVAL_PLUS_INF) return INTERVAL_MIN_INF;
 
-    /* Check overflow: a - b > +INF */
+    // Check overflow: a - b > +INF
     if (b < 0 && a > INTERVAL_PLUS_INF + b) return INTERVAL_PLUS_INF;
 
-    /* Check underflow: a - b < -INF */
+    // Check underflow: a - b < -INF
     if (b > 0 && a < INTERVAL_MIN_INF + b) return INTERVAL_MIN_INF;
 
     return a - b;
 }
 
-/* Multiplication checking overflow and INF */
+// Multiplication checking overflow and INF
 static int64_t safe_mult(int64_t a, int64_t b) {
 
-    /* Zero handling */
+    // Zero handling
     if (a == 0 || b == 0) return 0;
 
-    /* INF handling, all possible cases because a and b can be anything */
+    // INF handling, all possible cases because a and b can be anything
     if (a == INTERVAL_MIN_INF && b > 0) return INTERVAL_MIN_INF;
     if (a == INTERVAL_MIN_INF && b < 0) return INTERVAL_PLUS_INF;
     if (a == INTERVAL_PLUS_INF && b > 0) return INTERVAL_PLUS_INF;
@@ -205,25 +199,25 @@ static int64_t safe_mult(int64_t a, int64_t b) {
     if (b == INTERVAL_PLUS_INF && a > 0) return INTERVAL_PLUS_INF;
     if (b == INTERVAL_PLUS_INF && a < 0) return INTERVAL_MIN_INF;
 
-    /* Check overflow: a * b > +INF <=> a < +INF / b -- (a and b positive) */
+    // Check overflow: a * b > +INF <=> a < +INF / b -- (a and b positive)
     if (a > 0 && b > 0 && a > INTERVAL_PLUS_INF / b) return INTERVAL_PLUS_INF;
 
-    /* Check overflow: a * b < -INF <=> b < -INF / a -- (a positive, b negative) */
+    // Check overflow: a * b < -INF <=> b < -INF / a -- (a positive, b negative)
     if (a > 0 && b < 0 && b < INTERVAL_MIN_INF / a) return INTERVAL_MIN_INF;
 
-    /* Check overflow: a * b < -INF <=> a < -INF / b -- (a negative, b positive) */
+    // Check overflow: a * b < -INF <=> a < -INF / b -- (a negative, b positive)
     if (a < 0 && b > 0 && a < INTERVAL_MIN_INF / b) return INTERVAL_MIN_INF;
 
-    /* Check overflow: a * b > +INF <=> -a > -(+INF / b) <=> a < +INF / b -- (a negative, b negative) */
+    // Check overflow: a * b > +INF <=> -a > -(+INF / b) <=> a < +INF / b -- (a negative, b negative)
     if (a < 0 && b < 0 && a < INTERVAL_PLUS_INF / b) return INTERVAL_PLUS_INF;
 
     return a * b;
 }
 
-/* Division checking overflow and INF, b != 0 */
+// Division checking overflow and INF, b != 0
 static int64_t safe_div(int64_t a, int64_t b) {
 
-    /* INF handling, all possible cases because a and b can be anything */
+    // INF handling, all possible cases because a and b can be anything
     if (a == INTERVAL_MIN_INF && b > 0) return INTERVAL_MIN_INF;
     if (a == INTERVAL_MIN_INF && b < 0) return INTERVAL_PLUS_INF;
     if (a == INTERVAL_PLUS_INF && b > 0) return INTERVAL_PLUS_INF;
@@ -234,10 +228,8 @@ static int64_t safe_div(int64_t a, int64_t b) {
     if (b == INTERVAL_PLUS_INF && a > 0) return INTERVAL_PLUS_INF;
     if (b == INTERVAL_PLUS_INF && a < 0) return INTERVAL_MIN_INF;
 
-    /*
-    With integer division overflow can happen with INTERVAL_MIN_INF / -1.
-    This case is handled in the above if stmt.
-    */
+    // With integer division overflow can happen with INTERVAL_MIN_INF / -1.
+    // This case is handled in the above if stmt.
 
     return a / b;
 }
@@ -258,11 +250,11 @@ static int64_t max4(int64_t a, int64_t b, int64_t c, int64_t d) {
 
 static Interval interval_plus(const Abstract_Interval_Ctx *ctx, Interval i1, Interval i2) {
 
-    /* Bottom handling */
+    // Bottom handling
     if (i1.type == INTERVAL_BOTTOM) return i1;
     if (i2.type == INTERVAL_BOTTOM) return i2;
 
-    /* Rule: [i1.a,i1.b] +# [i2.a,i2.b] = [i1.a + i2.a, i1.b + i2.b] */
+    // Rule: [i1.a,i1.b] +# [i2.a,i2.b] = [i1.a + i2.a, i1.b + i2.b]
     int64_t a = safe_plus(i1.a, i2.a);
     int64_t b = safe_plus(i1.b, i2.b);
 
@@ -271,11 +263,11 @@ static Interval interval_plus(const Abstract_Interval_Ctx *ctx, Interval i1, Int
 
 static Interval interval_minus(const Abstract_Interval_Ctx *ctx, Interval i1, Interval i2) {
 
-    /* Bottom handling */
+    // Bottom handling
     if (i1.type == INTERVAL_BOTTOM) return i1;
     if (i2.type == INTERVAL_BOTTOM) return i2;
 
-    /* Rule: [i1.a,i1.b] -# [i2.a,i2.b] = [i1.a - i2.b, i1.b - i2.a] */
+    // Rule: [i1.a,i1.b] -# [i2.a,i2.b] = [i1.a - i2.b, i1.b - i2.a]
     int64_t a = safe_minus(i1.a, i2.b);
     int64_t b = safe_minus(i1.b, i2.a);
 
@@ -284,19 +276,17 @@ static Interval interval_minus(const Abstract_Interval_Ctx *ctx, Interval i1, In
 
 static Interval interval_mult(const Abstract_Interval_Ctx *ctx, Interval i1, Interval i2) {
 
-    /* Bottom handling */
+    // Bottom handling
     if (i1.type == INTERVAL_BOTTOM) return i1;
     if (i2.type == INTERVAL_BOTTOM) return i2;
 
-    /*
-    Rule: [i1.a,i1.b] *# [i2.a,i2.b] = [x,y]
-    where: x = min(i1.a*i2.a, i1.a*i2.b, i1.b*i2.a, i1.b*i2.b)
-           y = max(i1.a*i2.a, i1.a*i2.b, i1.b*i2.a, i1.b*i2.b)
-
-    Setting i1.a = a, i1.b = b, i2.a = c, i2.b = d:
-           x = min(ac, ad, bc, bd)
-           y = max(ac, ad, bc, bd)
-    */
+    // Rule: [i1.a,i1.b] *# [i2.a,i2.b] = [x,y]
+    // where: x = min(i1.a*i2.a, i1.a*i2.b, i1.b*i2.a, i1.b*i2.b)
+    //        y = max(i1.a*i2.a, i1.a*i2.b, i1.b*i2.a, i1.b*i2.b)
+    //
+    // Setting i1.a = a, i1.b = b, i2.a = c, i2.b = d:
+    //        x = min(ac, ad, bc, bd)
+    //        y = max(ac, ad, bc, bd)
     int64_t ac = safe_mult(i1.a, i2.a);
     int64_t ad = safe_mult(i1.a, i2.b);
     int64_t bc = safe_mult(i1.b, i2.a);
@@ -308,21 +298,19 @@ static Interval interval_mult(const Abstract_Interval_Ctx *ctx, Interval i1, Int
     return interval_create(ctx, a, b);
 }
 
-/* TODO: Check soudness */
+// TODO: Check soudness
 static Interval interval_div(const Abstract_Interval_Ctx *ctx, Interval i1, Interval i2) {
 
-    /* Bottom handling */
+    // Bottom handling
     if (i1.type == INTERVAL_BOTTOM) return i1;
     if (i2.type == INTERVAL_BOTTOM) return i2;
 
-    /*
-    Setting i1.a = a, i1.b = b, i2.a = c, i2.b = d.
-
-    Rule: [a,b] /# [c,d] =
-          [min(a/c,a/d), max(b/c,b/d)] -- if c >= 1
-          [min(b/c,b/d), max(a/c,a/d)] -- if d <= -1
-          ([a,b] /# ([c,d] Intersect [1,+INF))) Union ([a,b] /# ([c,d] Intersect (-INF,1])) -- otherwise
-    */
+    // Setting i1.a = a, i1.b = b, i2.a = c, i2.b = d.
+    //
+    // Rule: [a,b] /# [c,d] =
+    //       [min(a/c,a/d), max(b/c,b/d)] -- if c >= 1
+    //       [min(b/c,b/d), max(a/c,a/d)] -- if d <= -1
+    //       ([a,b] /# ([c,d] Intersect [1,+INF))) Union ([a,b] /# ([c,d] Intersect (-INF,1])) -- otherwise
     int64_t a;
     int64_t b;
 
@@ -348,29 +336,27 @@ static Interval interval_div(const Abstract_Interval_Ctx *ctx, Interval i1, Inte
     }
     else {
 
-        /*
-        If we end up here then i2 contains 0.
-        If i2 contains 0 then m is negative (or zero) and n is positive (or zero)
-        otherwise i2 cannot contain 0.
+        // If we end up here then i2 contains 0.
+        // If i2 contains 0 then m is negative (or zero) and n is positive (or zero)
+        // otherwise i2 cannot contain 0.
+        //
+        // For the standard Interval logic we split by [1, +INF) and (-INF, -1] doing intersections,
+        // but for some domains [m,n] this values does not exists.
+        //
+        // We have [m,n] = .... [-1,0], [-1,1], [0,1] .... and k > 0.
+        //
+        // There are 4 edge cases:
+        // (1) If m > n (Constant propagation domain) then i2 is [0,0] or Top.
+        // (2) If [m,n] == [0,0] then [1,+INF) and (-INF,-1] are not in the domain.
+        // (3) If [m,n] == [-k,0] then [1,+INF) is not in the domain but (-INF,-1] it is.
+        // (4) If [m,n] == [0,k] then (-INF,-1] is not in the domain but [1,+INF)  it is.
+        //
+        // In all other cases [1, +INF) and (-INF, -1] are in the domain so we're fine.
 
-        For the standard Interval logic we split by [1, +INF) and (-INF, -1] doing intersections,
-        but for some domains [m,n] this values does not exists.
-
-        We have [m,n] = .... [-1,0], [-1,1], [0,1] .... and k > 0.
-
-        There are 4 edge cases:
-        (1) If m > n (Constant propagation domain) then i2 is [0,0] or Top.
-        (2) If [m,n] == [0,0] then [1,+INF) and (-INF,-1] are not in the domain.
-        (3) If [m,n] == [-k,0] then [1,+INF) is not in the domain but (-INF,-1] it is.
-        (4) If [m,n] == [0,k] then (-INF,-1] is not in the domain but [1,+INF)  it is.
-
-        In all other cases [1, +INF) and (-INF, -1] are in the domain so we're fine.
-        */
-
-        /* (1) */
+        // (1)
         if (ctx->m > ctx->n) {
             if (i2.a == INTERVAL_MIN_INF && i2.b == INTERVAL_PLUS_INF) {
-                /* Division by Top => return Top */
+                // Division by Top => return Top
                 return i2;
             }
             else if (i2.a == 0 && i2.b == 0) {
@@ -379,7 +365,7 @@ static Interval interval_div(const Abstract_Interval_Ctx *ctx, Interval i1, Inte
             }
         }
 
-        /* (2), (3), (4) TODO: Maybe I can do better */
+        // (2), (3), (4) TODO: Maybe I can do better
         if (ctx->m == 0 || ctx->n == 0) {
             return (Interval) {
                 .type = INTERVAL_STD,
@@ -397,23 +383,19 @@ static Interval interval_div(const Abstract_Interval_Ctx *ctx, Interval i1, Inte
     }
 }
 
-/* Widening operator (using thresholds) */
+// Widening operator (using thresholds)
 static Interval interval_widening(const Abstract_Interval_Ctx *ctx, Interval i1, Interval i2) {
 
-    /* Bottom handling */
+    // Bottom handling
     if (i1.type == INTERVAL_BOTTOM) return i2;
     if (i2.type == INTERVAL_BOTTOM) return i1;
 
-    /*
-    Rule: [i1.a,i1.b] ▽ [i2.a,i2.b] = [x,y]
-    where: if i1.a <= i2.a then x = i1.a otherwise x = max{k ∈ ctx->widening_points | k <= i2.a}.
-           if i1.b >= i2.b then y = i1.b otherwise y = min{k ∈ ctx->widening_points | k >= i2.b}.
-    */
+    // Rule: [i1.a,i1.b] ▽ [i2.a,i2.b] = [x,y]
+    // where: if i1.a <= i2.a then x = i1.a otherwise x = max{k ∈ ctx->widening_points | k <= i2.a}.
+    //        if i1.b >= i2.b then y = i1.b otherwise y = min{k ∈ ctx->widening_points | k >= i2.b}.
 
-    /*
-    If i2.a is -INF then the else branch will not set x, so we set it here in advance to -INF.
-    Same for y.
-    */
+    // If i2.a is -INF then the else branch will not set x, so we set it here in advance to -INF.
+    // Same for y.
     int64_t x = INTERVAL_MIN_INF;
     int64_t y = INTERVAL_PLUS_INF;
 
@@ -446,12 +428,12 @@ static Interval interval_widening(const Abstract_Interval_Ctx *ctx, Interval i1,
 
 // static Interval interval_narrowing(const Abstract_Int_State *s, Interval a, Interval b);
 
-/* ==================================================================================== */
+/* //////////////////////////////////////////////////////////////////////////////////// */
 
 Abstract_Interval_Ctx *abstract_interval_ctx_init(int64_t m, int64_t n, Variables vars, Constants c) {
     Abstract_Interval_Ctx *ctx = xmalloc(sizeof(Abstract_Interval_Ctx));
 
-    /* Setting the props */
+    // Setting the props
     ctx->m = m;
     ctx->n = n;
     ctx->vars = vars;
@@ -469,7 +451,7 @@ void abstract_interval_ctx_free(Abstract_Interval_Ctx *ctx) {
 Interval *abstract_interval_state_init(const Abstract_Interval_Ctx *ctx) {
     Interval *s = xmalloc(sizeof(Interval) * ctx->vars.count);
 
-    /* By default set to bottom*/
+    // By default set to bottom
     abstract_interval_state_set_bottom(ctx, s);
 
     return s;
@@ -480,12 +462,12 @@ void abstract_interval_state_free(Interval *s) {
 }
 
 void abstract_interval_state_set_bottom(const Abstract_Interval_Ctx *ctx, Interval *s) {
-    /* Since BOTTOM enum value = 0, all the intervals will be bottom */
+    // Since BOTTOM enum value = 0, all the intervals will be bottom
     memset(s, 0, sizeof(Interval) * ctx->vars.count);
 }
 
 void abstract_interval_state_set_top(const Abstract_Interval_Ctx *ctx, Interval *s) {
-    /* Set every interval to TOP */
+    // Set every interval to TOP
     for (size_t i = 0; i < ctx->vars.count; ++i) {
         s[i].type = INTERVAL_STD;
         s[i].a = INTERVAL_MIN_INF;
@@ -520,7 +502,7 @@ void abstract_interval_state_print(const Abstract_Interval_Ctx *ctx, const Inter
 bool abstract_interval_state_leq(const Abstract_Interval_Ctx *ctx, const Interval *s1, const Interval *s2) {
     bool result = true;
 
-    /* s1 <= s2 if all elements of s1 are <= all elements of s2 */
+    // s1 <= s2 if all elements of s1 are <= all elements of s2
     for (size_t i = 0; i < ctx->vars.count; ++i) {
         result = result && interval_leq(s1[i], s2[i]);
     }
@@ -552,7 +534,7 @@ Interval *abstract_interval_state_narrowing(const Abstract_Interval_Ctx *ctx, co
 
 /* ================================ Commands execution ================================ */
 
-/* Returns a new heap allocated state with the same elements of 's' */
+// Returns a new heap allocated state with the same elements of 's'
 static Interval *clone_state(const Abstract_Interval_Ctx *ctx, const Interval *s) {
     Interval *res = abstract_interval_state_init(ctx);
     memcpy(res, s, sizeof(Interval) * ctx->vars.count);
@@ -568,10 +550,10 @@ static Interval exec_aexpr(const Abstract_Interval_Ctx *ctx, const Interval *s, 
         }
     case NODE_VAR:
         {
-            /* Get the assigned variable */
+            // Get the assigned variable
             String var = node->as.var;
 
-            /* Get the interval for that variable */
+            // Get the interval for that variable
             size_t var_index = 0;
             for (size_t i = 0; i < ctx->vars.count; ++i) {
                 if (strncmp(var.name, ctx->vars.var[i].name, var.len) == 0) {
@@ -611,10 +593,10 @@ static Interval exec_aexpr(const Abstract_Interval_Ctx *ctx, const Interval *s, 
 
 static Interval *abstract_interval_state_exec_assign(const Abstract_Interval_Ctx *ctx, const Interval *s, const AST_Node *assign) {
 
-    /* Get the assigned variable */
+    // Get the assigned variable
     String var = assign->as.child.left->as.var;
 
-    /* Get the interval for that variable */
+    // Get the interval for that variable
     size_t var_index = 0;
     for (size_t i = 0; i < ctx->vars.count; ++i) {
         if (strncmp(var.name, ctx->vars.var[i].name, var.len) == 0) {
@@ -622,10 +604,10 @@ static Interval *abstract_interval_state_exec_assign(const Abstract_Interval_Ctx
         }
     }
 
-    /* Compute the right expression of assign node */
+    // Compute the right expression of assign node
     Interval aexpr_res = exec_aexpr(ctx, s, assign->as.child.right);
 
-    /* Create the new state and return */
+    // Create the new state and return
     Interval *res = clone_state(ctx, s);
     res[var_index] = aexpr_res;
     return res;
@@ -644,7 +626,7 @@ Interval *abstract_interval_state_exec_command(const Abstract_Interval_Ctx *ctx,
     case NODE_LEQ:
     case NODE_NOT:
     case NODE_AND:
-        /* TODO: for now it just return the state (it is sound) */
+        // TODO: for now it just return the state (it is sound)
         res = clone_state(ctx, s);
         break;
     case NODE_SKIP:
@@ -657,4 +639,4 @@ Interval *abstract_interval_state_exec_command(const Abstract_Interval_Ctx *ctx,
     return res;
 }
 
-/* ==================================================================================== */
+/* //////////////////////////////////////////////////////////////////////////////////// */

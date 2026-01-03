@@ -52,7 +52,7 @@ typedef struct {
 
 void pred_stack_push(Pred_Stack *s, size_t pred) {
     if (s->count >= s->capacity) {
-        /* Grow the dynamic array */
+        // Grow the dynamic array
         if (s->capacity == 0) {
             s->capacity = 8;
         } else {
@@ -71,25 +71,22 @@ size_t pred_stack_pop(Pred_Stack *s) {
     fprintf(stderr, "[ERROR]: Trying to pop from empty stack\n");
     exit(1);
 }
-/* ==================================================================================== */
+/* //////////////////////////////////////////////////////////////////////////////////// */
 
-/*
-Links all the elements in the stack of the predecessors to the current node.
-*/
+
+// Links all the elements in the stack of the predecessors to the current node.
 static void wire_predecessors(CFG *cfg, size_t cur_node, Pred_Stack *preds) {
 
-    /*
-    Copy the predecessors in the current node struct.
-
-    This function can be called multiple times wiring the same node, so for collecting
-    all the preds we do a realloc every time (the first time will be a simple malloc).
-    */
-    size_t cur_node_preds_count = cfg->nodes[cur_node].preds_count; /* Prev preds count */
+    // Copy the predecessors in the current node struct.
+    //
+    // This function can be called multiple times wiring the same node, so for collecting
+    // all the preds we do a realloc every time (the first time will be a simple malloc).
+    size_t cur_node_preds_count = cfg->nodes[cur_node].preds_count; // Prev preds count
     cfg->nodes[cur_node].preds_count += preds->count;
     cfg->nodes[cur_node].preds = xrealloc(cfg->nodes[cur_node].preds, sizeof(size_t)*cfg->nodes[cur_node].preds_count);
     memcpy(cfg->nodes[cur_node].preds + cur_node_preds_count, preds->data, sizeof(size_t)*preds->count);
 
-    /* Linking the edges */
+    // Linking the edges
     while (preds->count != 0) {
         size_t pred = pred_stack_pop(preds);
         size_t prev_node_edge_count = cfg->nodes[pred].edge_count;
@@ -102,22 +99,20 @@ static void wire_predecessors(CFG *cfg, size_t cur_node, Pred_Stack *preds) {
     }
 }
 
-/*
-Build the CFG using the AST node.
-
-The contruction follows the struct of the AST, exploring recusively the tree.
-
-For each stmt node it saves the information of the current node (src, type and structures)
-into the edge that will point to the next node (even if we don't know the next, in fact 'dst' will be -1).
-
-Then when we are on the successor node we can link to the predecessor using the 'wire_predecessors' utility.
-For tracing all the predecessors (that can be arbitrary) we use the 'preds' stack.
-*/
+// Build the CFG using the AST node.
+//
+// The contruction follows the struct of the AST, exploring recusively the tree.
+//
+// For each stmt node it saves the information of the current node (src, type and structures)
+// into the edge that will point to the next node (even if we don't know the next, in fact 'dst' will be -1).
+//
+// Then when we are on the successor node we can link to the predecessor using the 'wire_predecessors' utility.
+// For tracing all the predecessors (that can be arbitrary) we use the 'preds' stack.
 static void build_cfg_impl(CFG *cfg, AST_Node *node, size_t *counter, Pred_Stack *preds) {
     switch (node->type) {
     case NODE_SKIP:
     case NODE_ASSIGN:
-        /* Create the assign node */
+        // Create the assign node
         cfg->nodes[*counter] = build_node(*counter);
         cfg->nodes[*counter].edges[0].src = *counter;
         cfg->nodes[*counter].edges[0].dst = -1;
@@ -139,7 +134,7 @@ static void build_cfg_impl(CFG *cfg, AST_Node *node, size_t *counter, Pred_Stack
         build_cfg_impl(cfg, node->as.child.right, counter, preds);
         break;
     case NODE_IF:
-        /* If node */
+        // If node
         cfg->nodes[*counter] = build_node(*counter);
 
         cfg->nodes[*counter].edges[0].src = *counter;
@@ -160,7 +155,7 @@ static void build_cfg_impl(CFG *cfg, AST_Node *node, size_t *counter, Pred_Stack
         pred_stack_push(preds, *counter);
         *counter += 1;
 
-        /* Build the two branch, saving the predecessors */
+        // Build the two branch, saving the predecessors
         build_cfg_impl(cfg, node->as.child.left, counter, preds);
         Pred_Stack preds_then_branch = {0};
         while (preds->count != 0) {
@@ -175,7 +170,7 @@ static void build_cfg_impl(CFG *cfg, AST_Node *node, size_t *counter, Pred_Stack
             pred_stack_push(&preds_else_branch, pred_stack_pop(preds));
         }
 
-        /* Add the predecessors of the if stmt */
+        // Add the predecessors of the if stmt
         while (preds_then_branch.count != 0) {
             pred_stack_push(preds, pred_stack_pop(&preds_then_branch));
         }
@@ -187,7 +182,7 @@ static void build_cfg_impl(CFG *cfg, AST_Node *node, size_t *counter, Pred_Stack
         free(preds_else_branch.data);
         break;
     case NODE_WHILE:
-        /* Loop invariant Node */
+        // Loop invariant Node
         cfg->nodes[*counter] = build_node(*counter);
         cfg->nodes[*counter].is_while = true;
 
@@ -213,7 +208,7 @@ static void build_cfg_impl(CFG *cfg, AST_Node *node, size_t *counter, Pred_Stack
 
         wire_predecessors(cfg, loop_inv, preds);
 
-        /* The predecessor of a statement after the while is the loop invariant */
+        // The predecessor of a statement after the while is the loop invariant
         pred_stack_push(preds, loop_inv);
         break;
     default:
@@ -243,12 +238,10 @@ void cfg_print_graphviz(CFG *cfg, FILE *fp) {
             case EDGE_ASSIGN:
                 fprintf(fp, " [label=\"");
 
-                /*
-                Simply get the pointer to the var name
-                and continue printing until the end cond.
-                This mehod uses the assumption that the vars are pointing
-                to the original source file and that the source is zero ended.
-                */
+                // Simply get the pointer to the var name
+                // and continue printing until the end cond.
+                // This mehod uses the assumption that the vars are pointing
+                // to the original source file and that the source is zero ended.
                 const char *var = node.edges[j].as.assign->as.child.left->as.var.name;
                 while (
                 *var != ';' && *var != '\0' &&
@@ -286,7 +279,7 @@ CFG *cfg_get(AST_Node *root) {
 }
 
 void cfg_free(CFG *cfg) {
-    /* Free the AST nodes in the edges */
+    // Free the AST nodes in the edges
     for (size_t i = 0; i < cfg->count; ++i) {
         CFG_Node node = cfg->nodes[i];
         for (size_t j = 0; j < node.edge_count; ++j) {
@@ -302,7 +295,7 @@ void cfg_free(CFG *cfg) {
             }
         }
 
-        /* Predecessors array free */
+        // Predecessors array free
         if (node.preds != NULL) {
             free(node.preds);
         }

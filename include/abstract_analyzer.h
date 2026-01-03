@@ -21,32 +21,30 @@ typedef struct {
 } While_Analyzer_Opt;
 
 typedef struct {
-    /*
-    Number of steps to wait before applying the widening,
-    if the value is SIZE_MAX then it is disabled,
-    */
+    // Number of steps to wait before applying the widening,
+    // if the value is SIZE_MAX then it is disabled,
     size_t widening_delay;
 
-    /* Number of descending steps (narrowing) */
+    // Number of descending steps (narrowing)
     size_t descending_steps;
 
-    /* Initial abstract state conf file path for the entry point (each domain has its own representation) */
+    // Initial abstract state conf file path for the entry point (each domain has its own representation)
     const char *init_state_path;
 } While_Analyzer_Exec_Opt;
 
-/* Inits the analyzer structure based on the specific domain configuration */
+// Inits the analyzer structure based on the specific domain configuration
 While_Analyzer *while_analyzer_init(const char *src_path, const While_Analyzer_Opt *opt);
 
-/* Free the analyzer structure */
+// Free the analyzer structure
 void while_analyzer_free(While_Analyzer *wa);
 
-/* Execute the analysis */
+// Execute the analysis
 void while_analyzer_exec(While_Analyzer *wa, const While_Analyzer_Exec_Opt *opt);
 
-/* Dump the abstract states of every program point through 'fp' */
+// Dump the abstract states of every program point through 'fp'
 void while_analyzer_states_dump(const While_Analyzer *wa, FILE *fp);
 
-/* Dump the Control Flow Graph through 'fp', uses Graphviz format */
+// Dump the Control Flow Graph through 'fp', uses Graphviz format
 void while_analyzer_cfg_dump(const While_Analyzer *wa, FILE *fp);
 
-#endif /* WHILE_AI_ANALYZER_ */
+#endif // WHILE_AI_ANALYZER_

@@ -4,7 +4,7 @@
 #include <string.h>
 
 void vars_push_unique(Variables *vars, String s) {
-    /* Check if s is already present in the array */
+    // Check if s is already present in the array
     for (size_t i = 0; i < vars->count; ++i) {
         size_t len = s.len > vars->var[i].len ? s.len : vars->var[i].len;
         if (strncmp(vars->var[i].name, s.name, len) == 0) {
@@ -14,7 +14,7 @@ void vars_push_unique(Variables *vars, String s) {
 
     if (vars->count >= vars->capacity) {
         if (vars->capacity == 0) {
-            vars->capacity = 32; /* Inits with 32 elements */
+            vars->capacity = 32; // Inits with 32 elements
         } else {
             vars->capacity *= 2;
         }
@@ -24,7 +24,7 @@ void vars_push_unique(Variables *vars, String s) {
 }
 
 void constant_push_unique(Constants *c, int64_t constant) {
-    /* Check if s is already present in the array */
+    // Check if s is already present in the array
     for (size_t i = 0; i < c->count; ++i) {
         if (c->data[i] == constant) {
             return;
@@ -33,7 +33,7 @@ void constant_push_unique(Constants *c, int64_t constant) {
 
     if (c->count >= c->capacity) {
         if (c->capacity == 0) {
-            c->capacity = 32; /* Inits with 32 elements */
+            c->capacity = 32; // Inits with 32 elements
         } else {
             c->capacity *= 2;
         }

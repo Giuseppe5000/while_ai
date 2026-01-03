@@ -7,7 +7,7 @@
 typedef void Abstract_State;
 typedef void Abstract_Dom_Ctx;
 
-/* Operations in the current abstract domain */
+// Operations in the current abstract domain
 typedef struct {
     void (*ctx_free) (Abstract_Dom_Ctx *ctx);
     void (*state_free) (Abstract_State *s);
@@ -22,4 +22,4 @@ typedef struct {
 } Abstract_Dom_Ops;
 
 
-#endif /* WHILE_AI_ABSTRACT_DOMAIN_ */
+#endif // WHILE_AI_ABSTRACT_DOMAIN_

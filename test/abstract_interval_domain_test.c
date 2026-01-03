@@ -3,9 +3,9 @@
 #include <assert.h>
 #include <stdio.h>
 
-/* TODO: test over-approximations */
+// TODO: test over-approximations
 void interval_create_test(void) {
-    /* m,n integers */
+    // m,n integers
     int64_t m = -10;
     int64_t n = 10;
     Variables vars = {0};
@@ -40,7 +40,7 @@ void interval_create_test(void) {
     i = interval_create(ctx, -20, 7);
     assert(i.type == INTERVAL_STD && i.a == INTERVAL_MIN_INF && i.b == 7);
 
-    /* Try to create (-INF, -INF) / (INF,INF) */
+    // Try to create (-INF, -INF) / (INF,INF)
     i = interval_create(ctx, INTERVAL_MIN_INF, INTERVAL_MIN_INF);
     assert(i.type == INTERVAL_STD && i.a == INTERVAL_MIN_INF && i.b == INTERVAL_PLUS_INF);
 
@@ -49,7 +49,7 @@ void interval_create_test(void) {
 
     abstract_interval_ctx_free(ctx);
 
-    /* m,n infinite */
+    // m,n infinite
     m = INTERVAL_MIN_INF;
     n = INTERVAL_PLUS_INF;
     ctx = abstract_interval_ctx_init(m, n, vars, c);
@@ -78,7 +78,7 @@ void interval_create_test(void) {
     i = interval_create(ctx, -6, 7);
     assert(i.type == INTERVAL_STD);
 
-    /* Try to create (-INF, -INF) / (INF,INF) */
+    // Try to create (-INF, -INF) / (INF,INF)
     i = interval_create(ctx, INTERVAL_MIN_INF, INTERVAL_MIN_INF);
     assert(i.type == INTERVAL_STD && i.a == INTERVAL_MIN_INF && i.b == INTERVAL_PLUS_INF);
 
@@ -89,7 +89,7 @@ void interval_create_test(void) {
 }
 
 void interval_leq_test(void) {
-    /* STD intervals */
+    // STD intervals
     Interval i1 = {
         .type = INTERVAL_STD,
         .a = 10,
@@ -104,12 +104,12 @@ void interval_leq_test(void) {
 
     assert(interval_leq(i1, i2) == true);
 
-    /* i1 and i2 BOTTOM */
+    // i1 and i2 BOTTOM
     i1.type = INTERVAL_BOTTOM;
     i2.type = INTERVAL_BOTTOM;
     assert(interval_leq(i1, i2));
 
-    /* i1 BOTTOM */
+    // i1 BOTTOM
     i1.type = INTERVAL_BOTTOM;
     i2 = (Interval) {
         .type = INTERVAL_STD,
@@ -118,7 +118,7 @@ void interval_leq_test(void) {
     };
     assert(interval_leq(i1, i2) == true);
 
-    /* i2 BOTTOM */
+    // i2 BOTTOM
     i1 = (Interval) {
         .type = INTERVAL_STD,
         .a = 10,
@@ -129,7 +129,7 @@ void interval_leq_test(void) {
 }
 
 void interval_union_test(void) {
-    /* m,n integers */
+    // m,n integers
     int64_t m = -10;
     int64_t n = 10;
     Variables vars = {0};
@@ -139,128 +139,128 @@ void interval_union_test(void) {
     Interval i2 = {0};
     Interval i_union = {0};
 
-    i1 = interval_create(ctx, 1, -1); /* Bottom */
-    i2 = interval_create(ctx, 1, -1); /* Bottom */
+    i1 = interval_create(ctx, 1, -1); // Bottom
+    i2 = interval_create(ctx, 1, -1); // Bottom
     i_union = interval_union(ctx, i1, i2);
     assert(i_union.type == INTERVAL_BOTTOM);
 
-    i1 = interval_create(ctx, 1, -1); /* Bottom */
-    i2 = interval_create(ctx, 0, 2);  /* [0, 2] */
+    i1 = interval_create(ctx, 1, -1); // Bottom
+    i2 = interval_create(ctx, 0, 2);  // [0, 2]
     i_union = interval_union(ctx, i1, i2);
     assert(i_union.type == INTERVAL_STD && i_union.a == i2.a && i_union.b == i2.b);
 
-    i1 = interval_create(ctx, 0, 2);  /* [0, 2] */
-    i2 = interval_create(ctx, 1, -1); /* Bottom */
+    i1 = interval_create(ctx, 0, 2);  // [0, 2]
+    i2 = interval_create(ctx, 1, -1); // Bottom
     i_union = interval_union(ctx, i1, i2);
     assert(i_union.type == INTERVAL_STD && i_union.a == i1.a && i_union.b == i1.b);
 
-    i1 = interval_create(ctx, INTERVAL_MIN_INF, INTERVAL_PLUS_INF); /* Top */
-    i2 = interval_create(ctx, INTERVAL_MIN_INF, INTERVAL_PLUS_INF); /* Top */
+    i1 = interval_create(ctx, INTERVAL_MIN_INF, INTERVAL_PLUS_INF); // Top
+    i2 = interval_create(ctx, INTERVAL_MIN_INF, INTERVAL_PLUS_INF); // Top
     i_union = interval_union(ctx, i1, i2);
     assert(i_union.type == INTERVAL_STD && i_union.a == i1.a && i_union.b == i1.b);
 
-    i1 = interval_create(ctx, INTERVAL_MIN_INF, INTERVAL_PLUS_INF); /* Top */
-    i2 = interval_create(ctx, 1, -1); /* Bottom */
+    i1 = interval_create(ctx, INTERVAL_MIN_INF, INTERVAL_PLUS_INF); // Top
+    i2 = interval_create(ctx, 1, -1); // Bottom
     i_union = interval_union(ctx, i1, i2);
     assert(i_union.type == INTERVAL_STD && i_union.a == i1.a && i_union.b == i1.b);
 
-    i1 = interval_create(ctx, 1, -1); /* Bottom */
-    i2 = interval_create(ctx, INTERVAL_MIN_INF, INTERVAL_PLUS_INF); /* Top */
+    i1 = interval_create(ctx, 1, -1); // Bottom
+    i2 = interval_create(ctx, INTERVAL_MIN_INF, INTERVAL_PLUS_INF); // Top
     i_union = interval_union(ctx, i1, i2);
     assert(i_union.type == INTERVAL_STD && i_union.a == i2.a && i_union.b == i2.b);
 
-    i1 = interval_create(ctx, INTERVAL_MIN_INF, INTERVAL_PLUS_INF); /* Top */
-    i2 = interval_create(ctx, 0, 2);  /* [0, 2] */
+    i1 = interval_create(ctx, INTERVAL_MIN_INF, INTERVAL_PLUS_INF); // Top
+    i2 = interval_create(ctx, 0, 2);  // [0, 2]
     i_union = interval_union(ctx, i1, i2);
     assert(i_union.type == INTERVAL_STD && i_union.a == i1.a && i_union.b == i1.b);
 
-    i1 = interval_create(ctx, 0, 2);  /* [0, 2] */
-    i2 = interval_create(ctx, INTERVAL_MIN_INF, INTERVAL_PLUS_INF); /* Top */
+    i1 = interval_create(ctx, 0, 2);  // [0, 2]
+    i2 = interval_create(ctx, INTERVAL_MIN_INF, INTERVAL_PLUS_INF); // Top
     i_union = interval_union(ctx, i1, i2);
     assert(i_union.type == INTERVAL_STD && i_union.a == i2.a && i_union.b == i2.b);
 
-    i1 = interval_create(ctx, -2, 0);  /* [-2, 0] */
-    i2 = interval_create(ctx, 1, 2);  /* [1, 2] */
+    i1 = interval_create(ctx, -2, 0);  // [-2, 0]
+    i2 = interval_create(ctx, 1, 2);   // [1, 2]
     i_union = interval_union(ctx, i1, i2);
     assert(i_union.type == INTERVAL_STD && i_union.a == i1.a && i_union.b == i2.b);
 
-    i1 = interval_create(ctx, -1, 0);  /* [-2, 0] */
-    i2 = interval_create(ctx, 1, 2);  /* [1, 2] */
+    i1 = interval_create(ctx, -1, 0);  // [-2, 0]
+    i2 = interval_create(ctx, 1, 2);   // [1, 2]
     i_union = interval_union(ctx, i1, i2);
     assert(i_union.type == INTERVAL_STD && i_union.a == i1.a && i_union.b == i2.b);
 
-    i1 = interval_create(ctx, 1, 2);  /* [1, 2] */
-    i2 = interval_create(ctx, -2, 0);  /* [-2, 0] */
+    i1 = interval_create(ctx, 1, 2);  // [1, 2]
+    i2 = interval_create(ctx, -2, 0); // [-2, 0]
     i_union = interval_union(ctx, i1, i2);
     assert(i_union.type == INTERVAL_STD && i_union.a == i2.a && i_union.b == i1.b);
 
-    i1 = interval_create(ctx, INTERVAL_MIN_INF, 5); /* (-INF, 5] */
-    i2 = interval_create(ctx, 1, 2); /* [1, 2] */
+    i1 = interval_create(ctx, INTERVAL_MIN_INF, 5); // (-INF, 5]
+    i2 = interval_create(ctx, 1, 2); // [1, 2]
     i_union = interval_union(ctx, i1, i2);
     assert(i_union.type == INTERVAL_STD && i_union.a == i1.a && i_union.b == i1.b);
 
-    i1 = interval_create(ctx, INTERVAL_MIN_INF, 5); /* (-INF, 5] */
-    i2 = interval_create(ctx, 1, 8); /* [1, 8] */
+    i1 = interval_create(ctx, INTERVAL_MIN_INF, 5); // (-INF, 5]
+    i2 = interval_create(ctx, 1, 8); // [1, 8]
     i_union = interval_union(ctx, i1, i2);
     assert(i_union.type == INTERVAL_STD && i_union.a == i1.a && i_union.b == i2.b);
 
-    i1 = interval_create(ctx, -1, INTERVAL_PLUS_INF); /* [-1, +INF) */
-    i2 = interval_create(ctx, 1, 2); /* [1, 2] */
+    i1 = interval_create(ctx, -1, INTERVAL_PLUS_INF); // [-1, +INF)
+    i2 = interval_create(ctx, 1, 2); // [1, 2]
     i_union = interval_union(ctx, i1, i2);
     assert(i_union.type == INTERVAL_STD && i_union.a == i1.a && i_union.b == i1.b);
 
-    i1 = interval_create(ctx, -1, INTERVAL_PLUS_INF); /* [-1, +INF) */
-    i2 = interval_create(ctx, -5, 8); /* [-5, 8] */
+    i1 = interval_create(ctx, -1, INTERVAL_PLUS_INF); // [-1, +INF)
+    i2 = interval_create(ctx, -5, 8); // [-5, 8]
     i_union = interval_union(ctx, i1, i2);
     assert(i_union.type == INTERVAL_STD && i_union.a == i2.a && i_union.b == i1.b);
 
-    i1 = interval_create(ctx, -1, INTERVAL_PLUS_INF); /* [-1, +INF) */
-    i2 = interval_create(ctx, INTERVAL_MIN_INF, 8); /* (-INF, 8] */
+    i1 = interval_create(ctx, -1, INTERVAL_PLUS_INF); // [-1, +INF)
+    i2 = interval_create(ctx, INTERVAL_MIN_INF, 8); // (-INF, 8]
     i_union = interval_union(ctx, i1, i2);
     assert(i_union.type == INTERVAL_STD && i_union.a == i2.a && i_union.b == i1.b);
 
-    i1 = interval_create(ctx, 100, 100);  /* [100, 100] */
-    i2 = interval_create(ctx, 1, 2);      /* [1, 2] */
+    i1 = interval_create(ctx, 100, 100);  // [100, 100]
+    i2 = interval_create(ctx, 1, 2);      // [1, 2]
     i_union = interval_union(ctx, i1, i2);
     assert(i_union.type == INTERVAL_STD && i_union.a == i2.a && i_union.b == INTERVAL_PLUS_INF);
 
-    i1 = interval_create(ctx, -100, -100);  /* [-100, -100] */
-    i2 = interval_create(ctx, 1, 2);        /* [1, 2] */
+    i1 = interval_create(ctx, -100, -100);  // [-100, -100]
+    i2 = interval_create(ctx, 1, 2);        // [1, 2]
     i_union = interval_union(ctx, i1, i2);
     assert(i_union.type == INTERVAL_STD && i_union.a == INTERVAL_MIN_INF && i_union.b == i2.b);
 
-    i1 = interval_create(ctx, -100, -100);  /* [-100, -100] */
-    i2 = interval_create(ctx, -101, -101);  /* [-101, -101] */
+    i1 = interval_create(ctx, -100, -100);  // [-100, -100]
+    i2 = interval_create(ctx, -101, -101);  // [-101, -101]
     i_union = interval_union(ctx, i1, i2);
     assert(i_union.type == INTERVAL_STD && i_union.a == INTERVAL_MIN_INF && i_union.b == m);
 
-    i1 = interval_create(ctx, 100, 100);  /* [100, 100] */
-    i2 = interval_create(ctx, 101, 101);  /* [101, 101] */
+    i1 = interval_create(ctx, 100, 100);  // [100, 100]
+    i2 = interval_create(ctx, 101, 101);  // [101, 101]
     i_union = interval_union(ctx, i1, i2);
     assert(i_union.type == INTERVAL_STD && i_union.a == n && i_union.b == INTERVAL_PLUS_INF);
 
-    i1 = interval_create(ctx, -100, -100);  /* [-100, -100] */
-    i2 = interval_create(ctx, 101, 101);    /* [101, 101] */
+    i1 = interval_create(ctx, -100, -100);  // [-100, -100]
+    i2 = interval_create(ctx, 101, 101);    // [101, 101]
     i_union = interval_union(ctx, i1, i2);
     assert(i_union.type == INTERVAL_STD && i_union.a == INTERVAL_MIN_INF && i_union.b == INTERVAL_PLUS_INF);
 
-    i1 = interval_create(ctx, -1, INTERVAL_PLUS_INF); /* [-1, +INF) */
-    i2 = interval_create(ctx, -100, -100);            /* [-100, -100] */
+    i1 = interval_create(ctx, -1, INTERVAL_PLUS_INF); // [-1, +INF)
+    i2 = interval_create(ctx, -100, -100);            // [-100, -100]
     i_union = interval_union(ctx, i1, i2);
     assert(i_union.type == INTERVAL_STD && i_union.a == INTERVAL_MIN_INF && i_union.b == INTERVAL_PLUS_INF);
 
-    i1 = interval_create(ctx, -1, INTERVAL_PLUS_INF); /* [-1, +INF) */
-    i2 = interval_create(ctx, 100, 100);              /* [100, 100] */
+    i1 = interval_create(ctx, -1, INTERVAL_PLUS_INF); // [-1, +INF)
+    i2 = interval_create(ctx, 100, 100);              // [100, 100]
     i_union = interval_union(ctx, i1, i2);
     assert(i_union.type == INTERVAL_STD && i_union.a == i1.a && i_union.b == INTERVAL_PLUS_INF);
 
-    i1 = interval_create(ctx, INTERVAL_MIN_INF, 8); /* (-INF, 8] */
-    i2 = interval_create(ctx, -100, -100);          /* [-100, -100] */
+    i1 = interval_create(ctx, INTERVAL_MIN_INF, 8); // (-INF, 8]
+    i2 = interval_create(ctx, -100, -100);          // [-100, -100]
     i_union = interval_union(ctx, i1, i2);
     assert(i_union.type == INTERVAL_STD && i_union.a == INTERVAL_MIN_INF && i_union.b == i1.b);
 
-    i1 = interval_create(ctx, INTERVAL_MIN_INF, 8); /* (-INF, 8] */
-    i2 = interval_create(ctx, 100, 100);            /* [100, 100] */
+    i1 = interval_create(ctx, INTERVAL_MIN_INF, 8); // (-INF, 8]
+    i2 = interval_create(ctx, 100, 100);            // [100, 100]
     i_union = interval_union(ctx, i1, i2);
     assert(i_union.type == INTERVAL_STD && i_union.a == INTERVAL_MIN_INF && i_union.b == INTERVAL_PLUS_INF);
 
@@ -268,7 +268,7 @@ void interval_union_test(void) {
 }
 
 void interval_plus_test(void) {
-    /* m,n integers */
+    // m,n integers
     int64_t m = -10;
     int64_t n = 10;
     Variables vars = {0};
@@ -278,15 +278,15 @@ void interval_plus_test(void) {
     Interval i2 = {0};
     Interval i_plus = {0};
 
-    i1 = interval_create(ctx, 1, -1); /* Bottom */
-    i2 = interval_create(ctx, 1, -1); /* Bottom */
+    i1 = interval_create(ctx, 1, -1); // Bottom
+    i2 = interval_create(ctx, 1, -1); // Bottom
     i_plus = interval_plus(ctx, i1, i2);
     assert(i_plus.type == INTERVAL_BOTTOM);
 
-    /* TODO: finish */
+    // TODO: finish
 }
 
-/* TODO: test minus, mult, intersect, div */
+// TODO: test minus, mult, intersect, div
 
 int main(void) {
     interval_leq_test();

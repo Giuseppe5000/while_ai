@@ -12,32 +12,29 @@
 #include <assert.h>
 
 struct While_Analyzer {
-    /* Control Flow Graph of the input program, contains the program points (the nodes) */
+    // Control Flow Graph of the input program, contains the program points (the nodes)
     CFG *cfg;
 
-    /*
-    Every element is the pointer to a state.
-
-    So state[0] is the pointer to the state of the first program point
-    (the first node of the cfg, cfg->nodes[0]),
-    state[1] is the pointer to the state of the second program point, and so on...
-    */
+    // Every element is the pointer to a state.
+    // So state[0] is the pointer to the state of the first program point
+    // (the first node of the cfg, cfg->nodes[0]),
+    // state[1] is the pointer to the state of the second program point, and so on...
     Abstract_State **state;
 
-    /* Abstract domain context */
+    // Abstract domain context
     Abstract_Dom_Ctx *ctx;
 
-    /* Source code of the input program */
+    // Source code of the input program
     char *src;
 
-    /* Operations vtable */
+    // Operations vtable
     const Abstract_Dom_Ops *ops;
 };
 
 /* ====================================== Utils ====================================== */
 
 static char *read_file(const char *src_path) {
-    /* Open source file */
+    // Open source file
     FILE *fp = fopen(src_path, "r");
 
     if (fp == NULL) {
@@ -45,12 +42,12 @@ static char *read_file(const char *src_path) {
         exit(1);
     }
 
-    /* Getting file size */
+    // Getting file size
     fseek(fp, 0, SEEK_END);
     long file_size = ftell(fp);
     fseek(fp, 0, SEEK_SET);
 
-    /* Copy the text in a buffer */
+    // Copy the text in a buffer
     char *src = xmalloc((file_size + 1)*sizeof(char));
     fread(src, file_size, 1, fp);
     src[file_size] = '\0';
@@ -59,7 +56,7 @@ static char *read_file(const char *src_path) {
     return src;
 }
 
-/* ======================================#######====================================== */
+/* /////////////////////////////////////////////////////////////////////////////////// */
 
 /* ============================== Variables collection =============================== */
 
@@ -77,7 +74,7 @@ static void vars_collect(While_Analyzer *wa, Variables *vars) {
     lex_free(lex);
 }
 
-/* ======================================#######====================================== */
+/* /////////////////////////////////////////////////////////////////////////////////// */
 
 
 /* ================================ Constant collection =============================== */
@@ -97,7 +94,7 @@ static int int64_compare(const void *a, const void *b) {
 
 static void constant_collect(const char *src_path, Constants *constants, size_t vars_count) {
 
-    /* Collect constants in the source file */
+    // Collect constants in the source file
     char *src = read_file(src_path);
     Lexer *lex = lex_init(src);
 
@@ -112,7 +109,7 @@ static void constant_collect(const char *src_path, Constants *constants, size_t 
     lex_free(lex);
     free(src);
 
-    /* Using constant propagation domain for getting other constants */
+    // Using constant propagation domain for getting other constants
     While_Analyzer_Opt opt = {
         .type = WHILE_ANALYZER_PARAMETRIC_INTERVAL,
         .as = {
@@ -143,11 +140,11 @@ static void constant_collect(const char *src_path, Constants *constants, size_t 
     while_analyzer_free(constant_dom);
 }
 
-/* ======================================#######====================================== */
+/* /////////////////////////////////////////////////////////////////////////////////// */
 
 /* ================================== Worklist queue ================================== */
 
-/* The worklist is simply a queue (implemented ad linked list) */
+// The worklist is simply a queue (implemented ad linked list)
 typedef struct Program_Point_Node Program_Point_Node;
 struct Program_Point_Node {
     Program_Point_Node *next;
@@ -194,11 +191,11 @@ static size_t worklist_dequeue(Worklist *wl) {
         Program_Point_Node *to_free = wl->tail;
 
         if (wl->head == wl->tail) {
-            /* There is only one node */
+            // There is only one node
             wl->head = NULL;
             wl->tail = NULL;
         } else {
-            /* Set the tail to the prev element (there are almost 2 nodes) */
+            // Set the tail to the prev element (there are almost 2 nodes)
             wl->tail = to_free->prev;
             wl->tail->next = NULL;
         }
@@ -207,17 +204,17 @@ static size_t worklist_dequeue(Worklist *wl) {
         return id;
     }
 }
-/* ======================================#######====================================== */
+/* /////////////////////////////////////////////////////////////////////////////////// */
 
 
 /* ======================== Parametric interval domain Int(m,n) ======================= */
 static void while_analyzer_init_parametric_interval(While_Analyzer *wa, const char *src_path, int64_t m, int64_t n) {
 
-    /* Collect variables in the source */
+    // Collect variables in the source
     Variables vars = {0};
     vars_collect(wa, &vars);
 
-    /* Dynamic array of (sorted) constants, by default with -INF and +INF as widening threshold */
+    // Dynamic array of (sorted) constants, by default with -INF and +INF as widening threshold
     Constants c = {0};
     constant_push_unique(&c, INTERVAL_MIN_INF);
     constant_push_unique(&c, INTERVAL_PLUS_INF);
@@ -228,43 +225,42 @@ static void while_analyzer_init_parametric_interval(While_Analyzer *wa, const ch
 
     qsort(c.data, c.count, sizeof(int64_t), int64_compare);
 
-    /* Domain context setup */
+    // Domain context setup
     wa->ctx = abstract_interval_ctx_init(m, n, vars, c);
 
-    /* Alloc abstract states for all program points */
+    // Alloc abstract states for all program points
     wa->state = malloc(sizeof(Abstract_State *) * wa->cfg->count);
 
     for (size_t i = 0; i < wa->cfg->count; ++i) {
         wa->state[i] = (Abstract_State*) abstract_interval_state_init(wa->ctx);
     }
 
-    /* Link all domain functions */
+    // Link all domain functions
     wa->ops = &abstract_interval_ops;
 }
 
-/* ======================================#######====================================== */
+/* /////////////////////////////////////////////////////////////////////////////////// */
 
 
-
-/* Default init for all types of domain */
+// Default init for all types of domain
 While_Analyzer *while_analyzer_init(const char *src_path, const While_Analyzer_Opt *opt) {
 
-    /* Init analyzer */
+    // Init analyzer
     While_Analyzer *wa = xmalloc(sizeof(While_Analyzer));
     wa->src = read_file(src_path);
 
-    /* Lexer */
+    // Lexer
     Lexer *lex = lex_init(wa->src);
 
-    /* AST */
+    // AST
     AST_Node *ast = parser_parse(lex);
     lex_free(lex);
 
-    /* Get CFG */
+    // Get CFG
     wa->cfg = cfg_get(ast);
     parser_free_ast_node(ast);
 
-    /* Domain specific init */
+    // Domain specific init
     switch (opt->type) {
     case WHILE_ANALYZER_PARAMETRIC_INTERVAL:
         {
@@ -282,20 +278,20 @@ While_Analyzer *while_analyzer_init(const char *src_path, const While_Analyzer_O
 
 void while_analyzer_exec(While_Analyzer *wa, const While_Analyzer_Exec_Opt *opt) {
 
-    /* Init the abstract states (Top for P0 and Bottom the others) */
+    // Init the abstract states (Top for P0 and Bottom the others)
     wa->ops->state_set_top(wa->ctx, wa->state[0]);
     for (size_t i = 1; i < wa->cfg->count; ++i) {
         wa->ops->state_set_bottom(wa->ctx, wa->state[i]);
     }
 
-    /* Create a counter for each point (needed for opt->widening_delay) */
+    // Create a counter for each point (needed for opt->widening_delay)
     size_t *step_count = xcalloc(wa->cfg->count, sizeof(size_t));
 
-    /* === Worklist algorithm === */
+    // === Worklist algorithm ===
     Worklist wl = {0};
     worklist_init(&wl);
 
-    /* Add all the program points to the worklist */
+    // Add all the program points to the worklist
     for (size_t i = 0; i < wa->cfg->count; ++i) {
             worklist_enqueue(&wl, i);
     }
@@ -308,7 +304,7 @@ void while_analyzer_exec(While_Analyzer *wa, const While_Analyzer_Exec_Opt *opt)
         if (id != 0) {
             Abstract_State **states = xmalloc(sizeof(Abstract_State *) * node.preds_count);
 
-            /* Apply the abstract transfer function for each predecessor */
+            // Apply the abstract transfer function for each predecessor
             for (size_t i = 0; i < node.preds_count; ++i) {
                 size_t pred = node.preds[i];
                 CFG_Edge edge;
@@ -332,7 +328,7 @@ void while_analyzer_exec(While_Analyzer *wa, const While_Analyzer_Exec_Opt *opt)
                 }
             }
 
-            /* Union of the results */
+            // Union of the results
             Abstract_State *acc = wa->ops->union_(wa->ctx, states[0], states[0]);
             Abstract_State *prev_acc = NULL;
             for (size_t i = 1; i < node.preds_count; ++i) {
@@ -341,14 +337,14 @@ void while_analyzer_exec(While_Analyzer *wa, const While_Analyzer_Exec_Opt *opt)
                 wa->ops->state_free(prev_acc);
             }
 
-            /* Apply widening if we are on a widening point */
+            // Apply widening if we are on a widening point
             if (node.is_while && step_count[id] > opt->widening_delay) {
                 Abstract_State *prev_acc = acc;
                 acc = wa->ops->widening(wa->ctx, wa->state[id], acc);
                 wa->ops->state_free(prev_acc);
             }
 
-            /* If state changed signal the node dependencies */
+            // If state changed signal the node dependencies
             bool state_changed = !(wa->ops->state_leq(wa->ctx, wa->state[id], acc) && wa->ops->state_leq(wa->ctx, acc, wa->state[id]));
             if (state_changed) {
                 wa->ops->state_free(wa->state[id]);
@@ -362,7 +358,7 @@ void while_analyzer_exec(While_Analyzer *wa, const While_Analyzer_Exec_Opt *opt)
                 wa->ops->state_free(acc);
             }
 
-            /* States free */
+            // States free
             for (size_t i = 0; i < node.preds_count; ++i) {
                 wa->ops->state_free(states[i]);
             }
@@ -385,7 +381,7 @@ void while_analyzer_cfg_dump(const While_Analyzer *wa, FILE *fp) {
 
 void while_analyzer_free(While_Analyzer *wa) {
 
-    /* Free abstract states */
+    // Free abstract states
     for (size_t i = 0; i < wa->cfg->count; ++i) {
         wa->ops->state_free(wa->state[i]);
     }

@@ -7,7 +7,7 @@
 void parser_free_ast_node(AST_Node *node) {
     if (node != NULL) {
 
-        /* Leaf nodes */
+        // Leaf nodes
         if (node->type == NODE_NUM || node->type == NODE_VAR || node->type == NODE_BOOL_LITERAL) {
             free(node);
         }
@@ -95,7 +95,7 @@ void parser_print_ast(const AST_Node *node) {
 AST_Node *parser_copy_node(const AST_Node *node) {
     if (node != NULL) {
 
-        /* Leaf nodes */
+        // Leaf nodes
         if (node->type == NODE_NUM || node->type == NODE_VAR || node->type == NODE_BOOL_LITERAL) {
             AST_Node *node_copy = xmalloc(sizeof(AST_Node));
             node_copy->type = node->type;
@@ -129,12 +129,12 @@ AST_Node *parser_copy_node(const AST_Node *node) {
 }
 
 /* ============================= Recursive descent parser ============================= */
-/* https://en.wikipedia.org/wiki/Recursive_descent_parser */
+// https://en.wikipedia.org/wiki/Recursive_descent_parser
 
 static AST_Node *parse_stmt(Lexer *lex);
 static AST_Node *parse_bexp(Lexer *lex);
 
-/* Alloc a zero initialized AST node */
+// Alloc a zero initialized AST node
 static AST_Node *create_node(enum Node_Type type) {
     AST_Node *node = xmalloc(sizeof(AST_Node));
     memset(node, 0, sizeof(AST_Node));
@@ -152,7 +152,7 @@ static void expect(Token t, enum Token_Type type) {
 static AST_Node *parse_factor_aexp(Lexer *lex) {
     Token t = lex_next(lex);
 
-    /* Numeral */
+    // Numeral
     if (t.type == TOKEN_NUM) {
         AST_Node *num_node = create_node(NODE_NUM);
         num_node->as.num = t.as.num;
@@ -160,7 +160,7 @@ static AST_Node *parse_factor_aexp(Lexer *lex) {
         return num_node;
     }
 
-    /* Variable (a) */
+    // Variable (a)
     if (t.type == TOKEN_VAR) {
         AST_Node *var_node = create_node(NODE_VAR);
         var_node->as.var.name = t.as.str.name;
@@ -176,7 +176,7 @@ static AST_Node *parse_factor_aexp(Lexer *lex) {
 static AST_Node *parse_term_aexp(Lexer *lex) {
     AST_Node *left = parse_factor_aexp(lex);
 
-    /* '*' and '/' precedence */
+    // '*' and '/' precedence
     Token t = lex_peek(lex);
     while (t.type == TOKEN_MULT || t.type == TOKEN_DIV) {
         lex_next(lex);
@@ -201,7 +201,7 @@ static AST_Node *parse_term_aexp(Lexer *lex) {
 static AST_Node *parse_aexp(Lexer *lex) {
     AST_Node *left = parse_term_aexp(lex);
 
-    /* '-' and '+' precedence */
+    // '-' and '+' precedence
     Token t = lex_peek(lex);
     while (t.type == TOKEN_PLUS || t.type == TOKEN_MINUS) {
         lex_next(lex);
@@ -226,7 +226,7 @@ static AST_Node *parse_aexp(Lexer *lex) {
 static AST_Node *parse_atom_bexp(Lexer *lex) {
     Token t = lex_peek(lex);
 
-    /* True */
+    // True
     if (t.type == TOKEN_TRUE) {
         lex_next(lex);
         AST_Node *bool_lit_node = create_node(NODE_BOOL_LITERAL);
@@ -234,7 +234,7 @@ static AST_Node *parse_atom_bexp(Lexer *lex) {
         return bool_lit_node;
     }
 
-    /* False */
+    // False
     if (t.type == TOKEN_FALSE) {
         lex_next(lex);
         AST_Node *bool_lit_node = create_node(NODE_BOOL_LITERAL);
@@ -242,7 +242,7 @@ static AST_Node *parse_atom_bexp(Lexer *lex) {
         return bool_lit_node;
     }
 
-    /* Not */
+    // Not
     if (t.type == TOKEN_NOT) {
         lex_next(lex);
         AST_Node *not_node = create_node(NODE_NOT);
@@ -250,11 +250,11 @@ static AST_Node *parse_atom_bexp(Lexer *lex) {
         return not_node;
     }
 
-    /* It can be EQ or LEQ */
+    // It can be EQ or LEQ
     AST_Node *left = parse_aexp(lex);
     t = lex_next(lex);
 
-    /* EQ */
+    // EQ
     if (t.type == TOKEN_EQ) {
         AST_Node *eq_node = create_node(NODE_EQ);
         eq_node->as.child.left = left;
@@ -262,7 +262,7 @@ static AST_Node *parse_atom_bexp(Lexer *lex) {
         return eq_node;
     }
 
-    /* LEQ */
+    // LEQ
     if (t.type == TOKEN_LEQ) {
         AST_Node *leq_node = create_node(NODE_LEQ);
         leq_node->as.child.left = left;
@@ -293,19 +293,19 @@ static AST_Node *parse_bexp(Lexer *lex) {
 static AST_Node *parse_atom_stmt(Lexer *lex) {
     Token t = lex_next(lex);
 
-    /* Assignment */
+    // Assignment
     if (t.type == TOKEN_VAR) {
 
-        /* Variable (a) */
+        // Variable (a)
         AST_Node *var_node = create_node(NODE_VAR);
         var_node->as.var.name = t.as.str.name;
         var_node->as.var.len = t.as.str.len;
 
-        /* Assing symbol (:=) */
+        // Assing symbol (:=)
         t = lex_next(lex);
         expect(t, TOKEN_ASSIGN);
 
-        /* Aexp */
+        // Aexp
         AST_Node *assign_node = create_node(NODE_ASSIGN);
         assign_node->as.child.left = var_node;
         assign_node->as.child.right = parse_aexp(lex);
@@ -313,55 +313,55 @@ static AST_Node *parse_atom_stmt(Lexer *lex) {
         return assign_node;
     }
 
-    /* Skip */
+    // Skip
     if (t.type == TOKEN_SKIP) {
         AST_Node *skip_node = create_node(NODE_SKIP);
         return skip_node;
     }
 
-    /* If stmt */
+    // If stmt
     if (t.type == TOKEN_IF) {
         AST_Node *if_node = create_node(NODE_IF);
 
-        /* Condition (b) */
+        // Condition (b)
         if_node->as.child.condition = parse_bexp(lex);
 
-        /* Then symbol */
+        // Then symbol
         t = lex_next(lex);
         expect(t, TOKEN_THEN);
 
-        /* S1 */
+        // S1
         if_node->as.child.left = parse_stmt(lex);
 
-        /* Else symbol */
+        // Else symbol
         t = lex_next(lex);
         expect(t, TOKEN_ELSE);
 
-        /* S2 */
+        // S2
         if_node->as.child.right = parse_stmt(lex);
 
-        /* Fi symbol */
+        // Fi symbol
         t = lex_next(lex);
         expect(t, TOKEN_FI);
 
         return if_node;
     }
 
-    /* While stmt */
+    // While stmt
     if (t.type == TOKEN_WHILE) {
         AST_Node *while_node = create_node(NODE_WHILE);
 
-        /* Condition (b) */
+        // Condition (b)
         while_node->as.child.condition = parse_bexp(lex);
 
-        /* Do symbol */
+        // Do symbol
         t = lex_next(lex);
         expect(t, TOKEN_DO);
 
-        /* S */
+        // S
         while_node->as.child.left = parse_stmt(lex);
 
-        /* Done symbol */
+        // Done symbol
         t = lex_next(lex);
         expect(t, TOKEN_DONE);
 
@@ -372,7 +372,7 @@ static AST_Node *parse_atom_stmt(Lexer *lex) {
     exit(1);
 }
 
-/* Parse the sequence statements */
+// Parse the sequence statements
 static AST_Node *parse_stmt(Lexer *lex) {
     AST_Node *left = parse_atom_stmt(lex);
 
@@ -393,4 +393,4 @@ AST_Node *parser_parse(Lexer *lex) {
     return root;
 }
 
-/* ==================================================================================== */
+/* /////////////////////////////////////////////////////////////////////////////////// */

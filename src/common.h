@@ -21,15 +21,15 @@ typedef struct {
     size_t capacity;
 } Constants;
 
-/* Push 's' into the array if not already inside */
+// Push 's' into the array if not already inside
 void vars_push_unique(Variables *vars, String s);
 
-/* Push 'constat' into the array if not already inside */
+// Push 'constat' into the array if not already inside
 void constant_push_unique(Constants *c, int64_t constant);
 
-/* Same as originals but exits on OOM */
+// Same as originals but exits on OOM
 void *xmalloc(size_t size);
 void *xcalloc(size_t nmemb, size_t size);
 void *xrealloc(void *ptr, size_t size);
 
-#endif /* WHILE_AI_UTILS_ */
+#endif // WHILE_AI_UTILS_

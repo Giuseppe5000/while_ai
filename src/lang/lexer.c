@@ -11,7 +11,7 @@ struct Lexer {
     const char *cursor;
 };
 
-/* List of language keywords with associated type */
+// List of language keywords with associated type
 typedef struct {
     const char *keyword;
     enum Token_Type type;
@@ -55,20 +55,16 @@ static void skip_space(Lexer *lex) {
     }
 }
 
-/*
-Check if 'kt.keyword' is pointed by the lexer cursor.
-True case => returns the token associated with that keyword and updates the cursor.
-Otherwise => returns a token with EOF type.
-*/
+// Check if 'kt.keyword' is pointed by the lexer cursor.
+// True case => returns the token associated with that keyword and updates the cursor.
+// Otherwise => returns a token with EOF type.
 static Token check_keyword(Lexer *lex, Keyword_Token kt) {
     Token t = {0};
 
     if (strncmp(lex->cursor, kt.keyword, strlen(kt.keyword)) == 0) {
 
-        /*
-        A variable like 'whileCounter' will be tokenize as 'while' and 'Counter'.
-        Here I should check that after the keyword there is no alphanumeric char.
-        */
+        // A variable like 'whileCounter' will be tokenize as 'while' and 'Counter'.
+        // Here I should check that after the keyword there is no alphanumeric char.
         if (isalnum(kt.keyword[0]) && isalnum(lex->cursor[strlen(kt.keyword)])) {
             return t;
         }
@@ -88,26 +84,26 @@ Token lex_next(Lexer *lex) {
 
     skip_space(lex);
 
-    /* EOF */
+    // EOF
     if (*lex->cursor == '\0') {
         return t;
     }
 
-    /* Parse numbers (integers) */
+    // Parse numbers (integers)
     if (isdigit(*lex->cursor)) {
         const char *start = lex->cursor;
 
-        /* Skip the number */
+        // Skip the number
         while (isdigit(*lex->cursor)) {
             lex->cursor++;
         }
 
         t.type = TOKEN_NUM;
-        t.as.num = atoll(start); /* TODO: Better to use strtoll */
+        t.as.num = atoll(start); // TODO: Better to use strtoll
         return t;
     }
 
-    /* Keywords */
+    // Keywords
     for (size_t i = 0; i < keywords_len; ++i) {
         t = check_keyword(lex, keywords[i]);
 
@@ -116,7 +112,7 @@ Token lex_next(Lexer *lex) {
         }
     }
 
-    /* Variables (alphanum and start with alpha) */
+    // Variables (alphanum and start with alpha)
     if (isalpha(*lex->cursor)) {
         const char *start = lex->cursor;
 
@@ -130,12 +126,12 @@ Token lex_next(Lexer *lex) {
         return t;
     }
 
-    /*TODO: Better to signal a syntax error */
+    // TODO: Better to signal a syntax error
     assert(0 && "UNREACHABLE");
 }
 
 Token lex_peek(Lexer *lex) {
-    /* Get token and then rewind the cursor */
+    // Get token and then rewind the cursor
     const char *cursor = lex->cursor;
     Token t = lex_next(lex);
     lex->cursor = cursor;
