@@ -598,11 +598,31 @@ Interval *abstract_interval_state_exec_command(const Abstract_Interval_Ctx *ctx,
         res = abstract_interval_state_exec_assign(ctx, s, command);
         break;
     case NODE_BOOL_LITERAL:
+        {
+            bool value = command->as.boolean;
+            if (value) {
+                // No filtering
+                res = clone_state(ctx, s);
+            } else {
+                // Always false, so return bottom
+                res = abstract_interval_state_init(ctx);
+                abstract_interval_state_set_bottom(ctx, res);
+            }
+            break;
+        }
     case NODE_EQ:
     case NODE_LEQ:
     case NODE_NOT:
     case NODE_AND:
-        // TODO: for now it just return the state (it is sound)
+        // TODO: Advanced abstract tests from Minè Tutorial.
+        // That needs the forward traverse of the tree, but
+        // the intermediate results needs to be saved in the tree.
+        //
+        // Then after applying the condition the backward traverse
+        // is applied, and for that the backward ops are needed (page 227).
+        //
+        // After this, we have a tree with the leaf variable that represents
+        // the filtered states.
         res = clone_state(ctx, s);
         break;
     case NODE_SKIP:
