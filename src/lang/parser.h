@@ -2,10 +2,8 @@
 #define WHILE_AI_PARSER_
 
 #include "lexer.h"
-#include <stddef.h>
-#include <stdint.h>
+#include <stdio.h>
 #include <stdbool.h>
-
 
 // Syntactic Categories for While language.
 //
@@ -77,8 +75,8 @@ struct AST_Node {
 // Returns the root node of the AST.
 AST_Node *parser_parse(Lexer *lex);
 
-// Prints the ast through the stdout
-void parser_print_ast(const AST_Node *node);
+// Prints the ast through 'fp' (as S-expression)
+void parser_print_ast(const AST_Node *node, FILE *fp);
 
 // Returns an dynamic allocated copy of the tree in 'node'
 AST_Node *parser_copy_node(const AST_Node *node);

@@ -244,31 +244,16 @@ void cfg_print_graphviz(CFG *cfg, FILE *fp) {
             switch (node.edges[j].type) {
             case EDGE_ASSIGN:
                 fprintf(fp, " [label=\"");
-
-                // Simply get the pointer to the var name
-                // and continue printing until the end cond.
-                // This mehod uses the assumption that the vars are pointing
-                // to the original source file and that the source is zero ended.
-                const char *var = node.edges[j].as.assign->as.child.left->as.var.name;
-                while (
-                *var != ';' && *var != '\0' &&
-                strncmp(var, "else", 4) != 0 &&
-                strncmp(var, "fi", 2) != 0 &&
-                strncmp(var, "done", 4) != 0
-                ) {
-                    if (*var != '\n') {
-                        fprintf(fp, "%c", *var);
-                    }
-                    var++;
-                }
-
+                parser_print_ast(node.edges[j].as.assign, fp);
                 fprintf(fp, "\"]\n");
                 break;
             case EDGE_GUARD:
-                fprintf(fp, " [label=\"%s\"]\n", j == 0 ? "T" : "F");
+                fprintf(fp, " [label=\"");
+                parser_print_ast(node.edges[j].as.condition, fp);
+                fprintf(fp, "\"]\n");
                 break;
             case EDGE_SKIP:
-                fprintf(fp, " [label=\"skip\"]\n");
+                fprintf(fp, " [label=\"(skip)\"]\n");
                 break;
             }
         }

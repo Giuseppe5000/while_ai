@@ -21,7 +21,7 @@ struct CFG_Edge {
         AST_Node *skip;
         AST_Node *assign;
         AST_Node *condition;
-    } as;
+    } as; // TODO: union is not needed actually
 };
 
 struct CFG_Node{

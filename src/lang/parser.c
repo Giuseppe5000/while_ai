@@ -20,76 +20,102 @@ void parser_free_ast_node(AST_Node *node) {
     }
 }
 
-static void parser_print_ast_impl(const AST_Node *node, int indent) {
-    if (node->type == NODE_NUM) {
-        printf("%*s%ld\n", indent, "", node->as.num);
-    }
-    else if (node->type == NODE_VAR) {
-        printf("%*s%.*s\n", indent, "", (int)node->as.var.len, node->as.var.name);
-    }
-    else if (node->type == NODE_BOOL_LITERAL) {
+static void parser_print_ast_impl(const AST_Node *node, FILE *fp) {
+    switch (node->type) {
+    case NODE_NUM:
+        fprintf(fp, " %ld", node->as.num);
+        break;
+    case NODE_VAR:
+        fprintf(fp, " %.*s", (int)node->as.var.len, node->as.var.name);
+        break;
+    case NODE_BOOL_LITERAL:
         if (node->as.boolean) {
-            printf("%*s(true)\n", indent, "");
+            fprintf(fp, " (true)");
         } else {
-            printf("%*s(false)\n", indent, "");
+            fprintf(fp, " (false)");
         }
-    }
-    else {
-        switch (node->type) {
-        case NODE_NUM:
-        case NODE_VAR:
-        case NODE_BOOL_LITERAL:
-            break;
-        case NODE_PLUS:
-            printf("%*s+\n", indent, "");
-            break;
-        case NODE_MINUS:
-            printf("%*s-\n", indent, "");
-            break;
-        case NODE_MULT:
-            printf("%*s*\n", indent, "");
-            break;
-        case NODE_DIV:
-            printf("%*s/\n", indent, "");
-            break;
-        case NODE_EQ:
-            printf("%*s=\n", indent, "");
-            break;
-        case NODE_LEQ:
-            printf("%*s<=\n", indent, "");
-            break;
-        case NODE_NOT:
-            printf("%*s!\n", indent, "");
-            break;
-        case NODE_AND:
-            printf("%*s&\n", indent, "");
-            break;
-        case NODE_ASSIGN:
-            printf("%*s:=\n", indent, "");
-            break;
-        case NODE_SKIP:
-            printf("%*sskip\n", indent, "");
-            break;
-        case NODE_SEQ:
-            printf("%*s;\n", indent, "");
-            break;
-        case NODE_IF:
-            printf("%*sif\n", indent, "");
-            parser_print_ast_impl(node->as.child.condition, indent + 2);
-            break;
-        case NODE_WHILE:
-            printf("%*swhile\n", indent, "");
-            parser_print_ast_impl(node->as.child.condition, indent + 2);
-            break;
-        }
-
-        if (node->type != NODE_SKIP) parser_print_ast_impl(node->as.child.left, indent + 2);
-        if (node->type != NODE_WHILE && node->type != NODE_SKIP && node->type != NODE_NOT) parser_print_ast_impl(node->as.child.right, indent + 2);
+        break;
+    case NODE_PLUS:
+        fprintf(fp, " (+");
+        parser_print_ast_impl(node->as.child.left, fp);
+        parser_print_ast_impl(node->as.child.right, fp);
+        fprintf(fp, ")");
+        break;
+    case NODE_MINUS:
+        fprintf(fp, " (-");
+        parser_print_ast_impl(node->as.child.left, fp);
+        parser_print_ast_impl(node->as.child.right, fp);
+        fprintf(fp, ")");
+        break;
+    case NODE_MULT:
+        fprintf(fp, " (*");
+        parser_print_ast_impl(node->as.child.left, fp);
+        parser_print_ast_impl(node->as.child.right, fp);
+        fprintf(fp, ")");
+        break;
+    case NODE_DIV:
+        fprintf(fp, " (/");
+        parser_print_ast_impl(node->as.child.left, fp);
+        parser_print_ast_impl(node->as.child.right, fp);
+        fprintf(fp, ")");
+        break;
+    case NODE_EQ:
+        fprintf(fp, " (=");
+        parser_print_ast_impl(node->as.child.left, fp);
+        parser_print_ast_impl(node->as.child.right, fp);
+        fprintf(fp, ")");
+        break;
+    case NODE_LEQ:
+        fprintf(fp, " (<=");
+        parser_print_ast_impl(node->as.child.left, fp);
+        parser_print_ast_impl(node->as.child.right, fp);
+        fprintf(fp, ")");
+        break;
+    case NODE_NOT:
+        fprintf(fp, " (!");
+        parser_print_ast_impl(node->as.child.left, fp);
+        fprintf(fp, ")");
+        break;
+    case NODE_AND:
+        fprintf(fp, " (&");
+        parser_print_ast_impl(node->as.child.left, fp);
+        parser_print_ast_impl(node->as.child.right, fp);
+        fprintf(fp, ")");
+        break;
+    case NODE_ASSIGN:
+        fprintf(fp, " (:=");
+        parser_print_ast_impl(node->as.child.left, fp);
+        parser_print_ast_impl(node->as.child.right, fp);
+        fprintf(fp, ")");
+        break;
+    case NODE_SKIP:
+        fprintf(fp, " (skip");
+        fprintf(fp, ")");
+        break;
+    case NODE_SEQ:
+        parser_print_ast_impl(node->as.child.left, fp);
+        parser_print_ast_impl(node->as.child.right, fp);
+        break;
+    case NODE_IF:
+        fprintf(fp, " (if");
+        parser_print_ast_impl(node->as.child.condition, fp);
+        fprintf(fp, " (");
+        parser_print_ast_impl(node->as.child.left, fp);
+        parser_print_ast_impl(node->as.child.right, fp);
+        fprintf(fp, "))");
+        break;
+    case NODE_WHILE:
+        fprintf(fp, " (while");
+        parser_print_ast_impl(node->as.child.condition, fp);
+        fprintf(fp, " (");
+        parser_print_ast_impl(node->as.child.left, fp);
+        fprintf(fp, "))");
+        break;
     }
 }
 
-void parser_print_ast(const AST_Node *node) {
-    parser_print_ast_impl(node, 0);
+void parser_print_ast(const AST_Node *node, FILE *fp) {
+    parser_print_ast_impl(node, fp);
 }
 
 AST_Node *parser_copy_node(const AST_Node *node) {
