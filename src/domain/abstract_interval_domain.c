@@ -298,7 +298,6 @@ static Interval interval_mult(const Abstract_Interval_Ctx *ctx, Interval i1, Int
     return interval_create(ctx, a, b);
 }
 
-// TODO: Check soudness
 static Interval interval_div(const Abstract_Interval_Ctx *ctx, Interval i1, Interval i2) {
 
     // Bottom handling
@@ -335,47 +334,18 @@ static Interval interval_div(const Abstract_Interval_Ctx *ctx, Interval i1, Inte
         return interval_create(ctx, a, b);
     }
     else {
+        Interval pos = {
+            .type = INTERVAL_STD,
+            .a = 1,
+            .b = INTERVAL_PLUS_INF,
+        };
 
-        // If we end up here then i2 contains 0.
-        // If i2 contains 0 then m is negative (or zero) and n is positive (or zero)
-        // otherwise i2 cannot contain 0.
-        //
-        // For the standard Interval logic we split by [1, +INF) and (-INF, -1] doing intersections,
-        // but for some domains [m,n] this values does not exists.
-        //
-        // We have [m,n] = .... [-1,0], [-1,1], [0,1] .... and k > 0.
-        //
-        // There are 4 edge cases:
-        // (1) If m > n (Constant propagation domain) then i2 is [0,0] or Top.
-        // (2) If [m,n] == [0,0] then [1,+INF) and (-INF,-1] are not in the domain.
-        // (3) If [m,n] == [-k,0] then [1,+INF) is not in the domain but (-INF,-1] it is.
-        // (4) If [m,n] == [0,k] then (-INF,-1] is not in the domain but [1,+INF)  it is.
-        //
-        // In all other cases [1, +INF) and (-INF, -1] are in the domain so we're fine.
+        Interval neg = {
+            .type = INTERVAL_STD,
+            .a = INTERVAL_PLUS_INF,
+            .b = -1,
+        };
 
-        // (1)
-        if (ctx->m > ctx->n) {
-            if (i2.a == INTERVAL_MIN_INF && i2.b == INTERVAL_PLUS_INF) {
-                // Division by Top => return Top
-                return i2;
-            }
-            else if (i2.a == 0 && i2.b == 0) {
-                /* Division by zero */
-                return (Interval) {.type = INTERVAL_BOTTOM};
-            }
-        }
-
-        // (2), (3), (4) TODO: Maybe I can do better
-        if (ctx->m == 0 || ctx->n == 0) {
-            return (Interval) {
-                .type = INTERVAL_STD,
-                .a = INTERVAL_MIN_INF,
-                .b = INTERVAL_PLUS_INF,
-            };
-        }
-
-        Interval pos = interval_create(ctx, 1, INTERVAL_PLUS_INF);
-        Interval neg = interval_create(ctx, INTERVAL_MIN_INF, -1);
         Interval positive_part = interval_div(ctx, i1, interval_intersect(ctx, i2, pos));
         Interval negative_part = interval_div(ctx, i1, interval_intersect(ctx, i2, neg));
 
