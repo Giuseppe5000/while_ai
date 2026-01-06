@@ -37,8 +37,8 @@ static inline Abstract_State *abstract_interval_state_widening_wrapper(const Abs
     return (Abstract_State *) abstract_interval_state_widening((const Abstract_Interval_Ctx *) ctx, (const Interval *) s1, (const Interval *) s2);
 }
 
-static inline Abstract_State *abstract_interval_state_narrowing_wrapper(const Abstract_Dom_Ctx *ctx, const Abstract_State *s1, const Abstract_State *s2) {
-    return (Abstract_State *) abstract_interval_state_narrowing((const Abstract_Interval_Ctx *) ctx, (const Interval *) s1, (const Interval *) s2);
+static inline Abstract_State *abstract_interval_state_intersect_wrapper(const Abstract_Dom_Ctx *ctx, const Abstract_State *s1, const Abstract_State *s2) {
+    return (Abstract_State *) abstract_interval_state_intersect((const Abstract_Interval_Ctx *) ctx, (const Interval *) s1, (const Interval *) s2);
 }
 
 const Abstract_Dom_Ops abstract_interval_ops = {
@@ -51,5 +51,5 @@ const Abstract_Dom_Ops abstract_interval_ops = {
     .state_leq = abstract_interval_state_leq_wrapper,
     .union_ = abstract_interval_state_union_wrapper,
     .widening = abstract_interval_state_widening_wrapper,
-    .narrowing = abstract_interval_state_narrowing_wrapper,
+    .narrowing = abstract_interval_state_intersect_wrapper,
 };

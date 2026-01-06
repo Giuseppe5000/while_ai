@@ -361,8 +361,8 @@ static Interval interval_widening(const Abstract_Interval_Ctx *ctx, Interval i1,
     if (i2.type == INTERVAL_BOTTOM) return i1;
 
     // Rule: [i1.a,i1.b] ▽ [i2.a,i2.b] = [x,y]
-    // where: if i1.a <= i2.a then x = i1.a otherwise x = max{k ∈ ctx->widening_points | k <= i2.a}.
-    //        if i1.b >= i2.b then y = i1.b otherwise y = min{k ∈ ctx->widening_points | k >= i2.b}.
+    // where: if i1.a <= i2.a then x = i1.a else x = max{k ∈ ctx->widening_points | k <= i2.a}.
+    //        if i1.b >= i2.b then y = i1.b else y = min{k ∈ ctx->widening_points | k >= i2.b}.
 
     // If i2.a is -INF then the else branch will not set x, so we set it here in advance to -INF.
     // Same for y.
@@ -395,8 +395,6 @@ static Interval interval_widening(const Abstract_Interval_Ctx *ctx, Interval i1,
 
     return interval_create(ctx, x, y);
 }
-
-// static Interval interval_narrowing(const Abstract_Int_State *s, Interval a, Interval b);
 
 /* //////////////////////////////////////////////////////////////////////////////////// */
 
@@ -490,6 +488,16 @@ Interval *abstract_interval_state_union(const Abstract_Interval_Ctx *ctx, const 
     return res;
 }
 
+Interval *abstract_interval_state_intersect(const Abstract_Interval_Ctx *ctx, const Interval *s1, const Interval *s2) {
+    Interval *res = abstract_interval_state_init(ctx);
+
+    for (size_t i = 0; i < ctx->vars.count; ++i) {
+        res[i] = interval_intersect(ctx, s1[i], s2[i]);
+    }
+
+    return res;
+}
+
 Interval *abstract_interval_state_widening(const Abstract_Interval_Ctx *ctx, const Interval *s1, const Interval *s2) {
     Interval *res = abstract_interval_state_init(ctx);
 
@@ -499,8 +507,6 @@ Interval *abstract_interval_state_widening(const Abstract_Interval_Ctx *ctx, con
 
     return res;
 }
-
-Interval *abstract_interval_state_narrowing(const Abstract_Interval_Ctx *ctx, const Interval *s1, const Interval *s2) {}
 
 /* ================================ Commands execution ================================ */
 

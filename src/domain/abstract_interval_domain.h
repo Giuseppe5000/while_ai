@@ -69,10 +69,10 @@ bool abstract_interval_state_leq(const Abstract_Interval_Ctx *ctx, const Interva
 // Union
 Interval *abstract_interval_state_union(const Abstract_Interval_Ctx *ctx, const Interval *s1, const Interval *s2);
 
+// Intersection
+Interval *abstract_interval_state_intersect(const Abstract_Interval_Ctx *ctx, const Interval *s1, const Interval *s2);
+
 // Widening
 Interval *abstract_interval_state_widening(const Abstract_Interval_Ctx *ctx, const Interval *s1, const Interval *s2);
-
-// Narrowing
-Interval *abstract_interval_state_narrowing(const Abstract_Interval_Ctx *ctx, const Interval *s1, const Interval *s2);
 
 #endif  // WHILE_AI_ABSTRACT_INTERVAL_DOM_

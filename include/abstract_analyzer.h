@@ -22,7 +22,7 @@ typedef struct {
 
 typedef struct {
     // Number of steps to wait before applying the widening,
-    // if the value is SIZE_MAX then it is disabled,
+    // if the value is SIZE_MAX then it is disabled.
     size_t widening_delay;
 
     // Number of descending steps (narrowing)
