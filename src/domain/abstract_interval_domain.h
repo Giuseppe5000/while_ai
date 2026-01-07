@@ -57,6 +57,21 @@ void abstract_interval_state_free(Interval *s);
 void abstract_interval_state_set_bottom(const Abstract_Interval_Ctx *ctx, Interval *s);
 void abstract_interval_state_set_top(const Abstract_Interval_Ctx *ctx, Interval *s);
 
+// Set interval state using configuration file.
+// Configuration file has this format:
+//   *Each line is a variable*, if a variable is not present then defaults to TOP.
+//   TOP is an alias for [-INF, +INF].
+//   Invalid variables will not be initialized.
+//   The format is strict, it checks the single space after ':'.
+//
+//   Example configuration.conf:
+//     x: BOTTOM
+//     y: TOP
+//     z: [1,1]
+//     h: [-INF,10]
+//     f: [11,+INF]
+void abstract_interval_state_set_from_config(const Abstract_Interval_Ctx *ctx, Interval *s, FILE *fp);
+
 // Prints the state intervals (plain text) to fp
 void abstract_interval_state_print(const Abstract_Interval_Ctx *ctx, const Interval *s, FILE *fp);
 

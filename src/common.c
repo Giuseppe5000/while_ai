@@ -6,9 +6,10 @@
 void vars_push_unique(Variables *vars, String s) {
     // Check if s is already present in the array
     for (size_t i = 0; i < vars->count; ++i) {
-        size_t len = s.len > vars->var[i].len ? s.len : vars->var[i].len;
-        if (strncmp(vars->var[i].name, s.name, len) == 0) {
-            return;
+        if (s.len == vars->var[i].len) {
+            if (strncmp(vars->var[i].name, s.name, s.len) == 0) {
+                return;
+            }
         }
     }
 

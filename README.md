@@ -57,7 +57,7 @@ Narrowing:
 
 Exec:
 - [ ] Implement abstract tests in `abstract_interval_state_exec_command`.
-- [ ] Let the `While_Analyzer_Exec_Opt` take a string that represents the initial abstract state for the entry program point. Then each domain must have a function that takes that configuration and create a abstract state with that values. (examples of configuration in the examples).
+- [x] Let the `While_Analyzer_Exec_Opt` take a string that represents the initial abstract state for the entry program point. Then each domain must have a function that takes that configuration and create a abstract state with that values. (examples of configuration in the examples).
 
 Other things:
 - [x] Current variable darray stores only vars that are lvalue, so if a var is used only as rvalue (undefined variable) then this causes UB.

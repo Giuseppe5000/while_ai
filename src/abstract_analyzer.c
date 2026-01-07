@@ -325,8 +325,24 @@ While_Analyzer *while_analyzer_init(const char *src_path, const While_Analyzer_O
 
 void while_analyzer_exec(While_Analyzer *wa, const While_Analyzer_Exec_Opt *opt) {
 
-    // Init the abstract states (Top for P0 and Bottom the others)
-    wa->ops->state_set_top(wa->ctx, wa->state[0]);
+    // Init the abstract states
+    if (opt->init_state_path != NULL) {
+        // Inits P0 according to the user configuration
+        FILE *fp = fopen(opt->init_state_path, "r");
+        if (fp == NULL) {
+            fprintf(stderr, "[ERROR]: File %s not found.\n", opt->init_state_path);
+            exit(1);
+        }
+
+        wa->ops->state_set_from_config(wa->ctx, wa->state[0], fp);
+
+        fclose(fp);
+    } else {
+        // Default init for P0 (Top)
+        wa->ops->state_set_top(wa->ctx, wa->state[0]);
+    }
+
+    // All other states != P0 are Bottom
     for (size_t i = 1; i < wa->cfg->count; ++i) {
         wa->ops->state_set_bottom(wa->ctx, wa->state[i]);
     }
@@ -388,7 +404,7 @@ void while_analyzer_exec(While_Analyzer *wa, const While_Analyzer_Exec_Opt *opt)
                 Abstract_State *res = wa->ops->narrowing(wa->ctx, wa->state[id], transf_union);
                 wa->ops->state_free(transf_union);
 
-                // Modify the state
+                // State update
                 wa->ops->state_free(wa->state[id]);
                 wa->state[id] = res;
             }

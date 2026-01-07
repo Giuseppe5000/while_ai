@@ -443,6 +443,117 @@ void abstract_interval_state_set_top(const Abstract_Interval_Ctx *ctx, Interval 
     }
 }
 
+void abstract_interval_state_set_from_config(const Abstract_Interval_Ctx *ctx, Interval *s, FILE *fp) {
+    // Set all to TOP
+    abstract_interval_state_set_top(ctx, s);
+
+    char line[256];
+    while (fgets(line, 256, fp) != NULL) {
+
+        // Get variable len
+        size_t var_len = 0;
+        while (line[var_len] != ':' && line[var_len] != '\0') {
+            var_len++;
+        }
+
+        // Get the variable interval index
+        size_t var_index = 0;
+        bool found = false;
+        for (size_t i = 0; i < ctx->vars.count; ++i) {
+            if (var_len == ctx->vars.var[i].len) {
+                if (strncmp(line, ctx->vars.var[i].name, var_len) == 0) {
+                    var_index = i;
+                    found = true;
+                }
+            }
+        }
+        if (!found) continue;
+
+        // Parse the interval value
+        const char *c = line + var_len;
+
+        // Skip ': '
+        if (*c != ':') continue;
+        c++;
+        if (*c != ' ') continue;
+        c++;
+
+        // TOP
+        if (strncmp(c, "TOP", 3) == 0) {
+            c += 3;
+
+            // Check endline/EOF
+            if (*c != '\n' && *c != '\0') continue;
+
+            s[var_index].type = INTERVAL_STD;
+            s[var_index].a = INTERVAL_MIN_INF;
+            s[var_index].b = INTERVAL_PLUS_INF;
+        }
+        // BOTTOM
+        else if (strncmp(c, "BOTTOM", 6) == 0) {
+            c += 6;
+
+            // Check endline/EOF
+            if (*c != '\n' && *c != '\0') continue;
+
+            s[var_index].type = INTERVAL_BOTTOM;
+        }
+        // Interval [a,b]
+        else {
+            int64_t a;
+            int64_t b;
+            char *endptr;
+
+            // Skip '['
+            if (*c != '[') continue;
+            c++;
+
+            // Read a
+            if (strncmp(c, "-INF", 4) == 0) {
+                a = INTERVAL_MIN_INF;
+                c += 4;
+            }
+            else if (strncmp(c, "+INF", 4) == 0) {
+                a = INTERVAL_PLUS_INF;
+                c += 4;
+            }
+            else {
+                a = strtoll(c, &endptr, 10);
+                if (*endptr != ',') continue;
+                c = endptr;
+            }
+
+            // Skip ','
+            if (*c != ',') continue;
+            c++;
+
+            // Read b
+            if (strncmp(c, "-INF", 4) == 0) {
+                b = INTERVAL_MIN_INF;
+                c += 4;
+            }
+            else if (strncmp(c, "+INF", 4) == 0) {
+                b = INTERVAL_PLUS_INF;
+                c += 4;
+            }
+            else {
+                b = strtoll(c, &endptr, 10);
+                if (*endptr != ']') continue;
+                c = endptr;
+            }
+
+            // Skip ']'
+            if (*c != ']') continue;
+            c++;
+
+            // Check endline/EOF
+            if (*c != '\n' && *c != '\0') continue;
+
+            s[var_index] = interval_create(ctx, a, b);
+        }
+    }
+}
+
 void abstract_interval_state_print(const Abstract_Interval_Ctx *ctx, const Interval *s, FILE *fp) {
     for (size_t i = 0; i < ctx->vars.count; ++i) {
         const char *var_name = ctx->vars.var[i].name;
@@ -529,11 +640,13 @@ static Interval exec_aexpr(const Abstract_Interval_Ctx *ctx, const Interval *s, 
             // Get the assigned variable
             String var = node->as.var;
 
-            // Get the interval for that variable
+            // Get the interval for that variable (here a variable must be found by contruction)
             size_t var_index = 0;
             for (size_t i = 0; i < ctx->vars.count; ++i) {
-                if (strncmp(var.name, ctx->vars.var[i].name, var.len) == 0) {
-                    var_index = i;
+                if (var.len == ctx->vars.var[i].len) {
+                    if (strncmp(var.name, ctx->vars.var[i].name, var.len) == 0) {
+                        var_index = i;
+                    }
                 }
             }
             return s[var_index];

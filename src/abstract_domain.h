@@ -13,6 +13,7 @@ typedef struct {
     void (*state_free) (Abstract_State *s);
     void (*state_set_bottom) (const Abstract_Dom_Ctx *ctx, Abstract_State *s);
     void (*state_set_top) (const Abstract_Dom_Ctx *ctx, Abstract_State *s);
+    void (*state_set_from_config) (const Abstract_Dom_Ctx *ctx, Abstract_State *s, FILE *fp);
     void (*state_print) (const Abstract_Dom_Ctx *ctx, const Abstract_State *s, FILE *fp);
     Abstract_State *(*exec_command) (const Abstract_Dom_Ctx *ctx, const Abstract_State *s, const AST_Node *command);
     bool (*state_leq) (const Abstract_Dom_Ctx *ctx, const Abstract_State *s1, const Abstract_State *s2);

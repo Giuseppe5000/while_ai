@@ -17,6 +17,10 @@ static inline void abstract_interval_state_set_top_wrapper(const Abstract_Dom_Ct
     abstract_interval_state_set_top((const Abstract_Interval_Ctx *) ctx, (Interval *) s);
 }
 
+static inline void abstract_interval_state_set_from_config_wrapper(const Abstract_Dom_Ctx *ctx, Abstract_State *s, FILE *fp) {
+    abstract_interval_state_set_from_config((const Abstract_Interval_Ctx *) ctx, (Interval *) s, fp);
+}
+
 static inline void abstract_interval_state_print_wrapper(const Abstract_Dom_Ctx *ctx, const Abstract_State *s, FILE *fp) {
     abstract_interval_state_print((const Abstract_Interval_Ctx *) ctx, (const Interval *) s, fp);
 }
@@ -46,6 +50,7 @@ const Abstract_Dom_Ops abstract_interval_ops = {
     .state_free = abstract_interval_state_free_wrapper,
     .state_set_bottom = abstract_interval_state_set_bottom_wrapper,
     .state_set_top = abstract_interval_state_set_top_wrapper,
+    .state_set_from_config = abstract_interval_state_set_from_config_wrapper,
     .state_print = abstract_interval_state_print_wrapper,
     .exec_command = abstract_interval_state_exec_command_wrapper,
     .state_leq = abstract_interval_state_leq_wrapper,
