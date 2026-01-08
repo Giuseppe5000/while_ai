@@ -395,14 +395,17 @@ void while_analyzer_exec(While_Analyzer *wa, const While_Analyzer_Exec_Opt *opt)
 
     // Apply narrowing
     for (size_t i = 0; i < opt->descending_steps; ++i) {
-        for (size_t id = 0; i < wa->cfg->count; ++i) {
+        for (size_t id = 0; id < wa->cfg->count; ++id) {
             CFG_Node node = wa->cfg->nodes[id];
 
             // Apply only on widening points (excluding the entry node)
-            if (id != 0 && node.is_while) {
-                Abstract_State *transf_union = abstract_transfer_union(wa, id);
-                Abstract_State *res = wa->ops->narrowing(wa->ctx, wa->state[id], transf_union);
-                wa->ops->state_free(transf_union);
+            if (id != 0) {
+                Abstract_State *res = abstract_transfer_union(wa, id);
+                if (node.is_while) {
+                    Abstract_State *transf_union = res;
+                    res = wa->ops->narrowing(wa->ctx, wa->state[id], transf_union);
+                    wa->ops->state_free(transf_union);
+                }
 
                 // State update
                 wa->ops->state_free(wa->state[id]);
