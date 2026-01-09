@@ -334,20 +334,35 @@ static Interval interval_div(const Abstract_Interval_Ctx *ctx, Interval i1, Inte
         return interval_create(ctx, a, b);
     }
     else {
+
+        // Here we manually do the two following intersection instead of
+        // using interval_intersect because we don't want to over-approximate
+        // the result (if the result is not in the domain).
+        //
+        // Otherwise in some cases this function will not terminate.
+        // For example this occurs when i2 = Top and we are on the
+        // constant propagation domain.
+
+        // Intersect [1,+INF) with i2
         Interval pos = {
             .type = INTERVAL_STD,
             .a = 1,
             .b = INTERVAL_PLUS_INF,
         };
+        pos.a = i2.a >= pos.a ? i2.a : pos.a;
+        pos.b = i2.b >= pos.b ? pos.b : i2.b;
 
+        // Intersect (-INF,-1] with i2
         Interval neg = {
             .type = INTERVAL_STD,
             .a = INTERVAL_PLUS_INF,
             .b = -1,
         };
+        neg.a = i2.a >= neg.a ? i2.a : neg.a;
+        neg.b = i2.b >= neg.b ? neg.b : i2.b;
 
-        Interval positive_part = interval_div(ctx, i1, interval_intersect(ctx, i2, pos));
-        Interval negative_part = interval_div(ctx, i1, interval_intersect(ctx, i2, neg));
+        Interval positive_part = interval_div(ctx, i1, pos);
+        Interval negative_part = interval_div(ctx, i1, neg);
 
         return interval_union(ctx, positive_part, negative_part);
     }
