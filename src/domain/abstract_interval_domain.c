@@ -351,15 +351,21 @@ static Interval interval_div(const Abstract_Interval_Ctx *ctx, Interval i1, Inte
         };
         pos.a = i2.a >= pos.a ? i2.a : pos.a;
         pos.b = i2.b >= pos.b ? pos.b : i2.b;
+        if (pos.a > pos.b) {
+            pos.type = INTERVAL_BOTTOM;
+        }
 
         // Intersect (-INF,-1] with i2
         Interval neg = {
             .type = INTERVAL_STD,
-            .a = INTERVAL_PLUS_INF,
+            .a = INTERVAL_MIN_INF,
             .b = -1,
         };
         neg.a = i2.a >= neg.a ? i2.a : neg.a;
         neg.b = i2.b >= neg.b ? neg.b : i2.b;
+        if (neg.a > neg.b) {
+            neg.type = INTERVAL_BOTTOM;
+        }
 
         Interval positive_part = interval_div(ctx, i1, pos);
         Interval negative_part = interval_div(ctx, i1, neg);
