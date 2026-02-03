@@ -413,6 +413,52 @@ static Interval interval_widening(const Abstract_Interval_Ctx *ctx, Interval i1,
 
 /* //////////////////////////////////////////////////////////////////////////////////// */
 
+/* ============================== Interval backward ops =============================== */
+
+typedef struct {
+    Interval a;
+    Interval b;
+} Interval_Tuple;
+
+static Interval_Tuple interval_backward_plus(const Abstract_Interval_Ctx *ctx, Interval x, Interval y, Interval r) {
+    Interval_Tuple t = {0};
+
+    t.a = interval_intersect(ctx, x, interval_minus(ctx, r, y));
+    t.b = interval_intersect(ctx, y, interval_minus(ctx, r, x));
+
+    return t;
+}
+
+static Interval_Tuple interval_backward_minus(const Abstract_Interval_Ctx *ctx, Interval x, Interval y, Interval r) {
+    Interval_Tuple t = {0};
+
+    t.a = interval_intersect(ctx, x, interval_plus(ctx, r, y));
+    t.b = interval_intersect(ctx, y, interval_minus(ctx, x, r));
+
+    return t;
+}
+
+static Interval_Tuple interval_backward_mult(const Abstract_Interval_Ctx *ctx, Interval x, Interval y, Interval r) {
+    Interval_Tuple t = {0};
+
+    t.a = interval_intersect(ctx, x, interval_div(ctx, r, y));
+    t.b = interval_intersect(ctx, y, interval_div(ctx, r, x));
+
+    return t;
+}
+
+static Interval_Tuple interval_backward_div(const Abstract_Interval_Ctx *ctx, Interval x, Interval y, Interval r) {
+    Interval_Tuple t = {0};
+    Interval s = interval_plus(ctx, r, interval_create(ctx, -1, 1));
+
+    t.a = interval_intersect(ctx, x, interval_mult(ctx, s, y));
+    t.b = interval_intersect(ctx, y, interval_union(ctx, interval_div(ctx, x, s), interval_create(ctx, 0, 0)));
+
+    return t;
+}
+
+/* //////////////////////////////////////////////////////////////////////////////////// */
+
 Abstract_Interval_Ctx *abstract_interval_ctx_init(int64_t m, int64_t n, Variables vars, Constants c) {
     Abstract_Interval_Ctx *ctx = xmalloc(sizeof(Abstract_Interval_Ctx));
 
