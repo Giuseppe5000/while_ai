@@ -688,6 +688,19 @@ Interval *abstract_interval_state_widening(const Abstract_Interval_Ctx *ctx, con
 
 /* ================================ Commands execution ================================ */
 
+// Get the index for the variable 'var' (assuming that the variable exists)
+static size_t get_var(const Abstract_Interval_Ctx *ctx, String var) {
+    size_t var_index = 0;
+    for (size_t i = 0; i < ctx->vars.count; ++i) {
+        if (var.len == ctx->vars.var[i].len) {
+            if (strncmp(var.name, ctx->vars.var[i].name, var.len) == 0) {
+                var_index = i;
+            }
+        }
+    }
+    return var_index;
+}
+
 // Returns a new heap allocated state with the same elements of 's'
 static Interval *clone_state(const Abstract_Interval_Ctx *ctx, const Interval *s) {
     Interval *res = abstract_interval_state_init(ctx);
@@ -708,15 +721,7 @@ static Interval exec_aexpr(const Abstract_Interval_Ctx *ctx, const Interval *s, 
             String var = node->as.var;
 
             // Get the interval for that variable (here a variable must be found by contruction)
-            size_t var_index = 0;
-            for (size_t i = 0; i < ctx->vars.count; ++i) {
-                if (var.len == ctx->vars.var[i].len) {
-                    if (strncmp(var.name, ctx->vars.var[i].name, var.len) == 0) {
-                        var_index = i;
-                    }
-                }
-            }
-            return s[var_index];
+            return s[get_var(ctx, var)];
         }
     case NODE_PLUS:
         {
@@ -741,6 +746,155 @@ static Interval exec_aexpr(const Abstract_Interval_Ctx *ctx, const Interval *s, 
             Interval i1 = exec_aexpr(ctx, s, node->as.child.left);
             Interval i2 = exec_aexpr(ctx, s, node->as.child.right);
             return interval_div(ctx, i1, i2);
+        }
+    default:
+        assert(0 && "UNREACHABLE");
+    }
+}
+
+static void exec_bexp_backprop(const Abstract_Interval_Ctx *ctx, Interval *s, Interval r, const AST_Node *node) {
+    switch (node->type) {
+    case NODE_NUM:
+        {
+            // Nothing.
+            break;
+        }
+    case NODE_VAR:
+        {
+            // Update the refined variable
+            String var = node->as.var;
+            s[get_var(ctx, var)] = r;
+            break;
+        }
+    case NODE_PLUS:
+        {
+            // Get the value of the child aexp
+            Interval left_aexp = exec_aexpr(ctx, s, node->as.child.left);
+            Interval right_aexp = exec_aexpr(ctx, s, node->as.child.right);
+
+            // We must have [a,b] + right_aexp = r
+            // and          left_aexp + [c,d]  = r
+            //
+            // t.a = [a,b] and t.b = [c,d]
+            Interval_Tuple t = interval_backward_plus(ctx, left_aexp, right_aexp, r);
+
+            // Then we intersect [a,b] with left_aexp and [c,d] with right_aexp
+            left_aexp = interval_intersect(ctx, left_aexp, t.a);
+            right_aexp = interval_intersect(ctx, right_aexp, t.b);
+
+            // Recursive call
+            exec_bexp_backprop(ctx, s, left_aexp, node->as.child.left);
+            exec_bexp_backprop(ctx, s, right_aexp, node->as.child.right);
+
+            break;
+        }
+    case NODE_MINUS:
+        {
+            Interval left_aexp = exec_aexpr(ctx, s, node->as.child.left);
+            Interval right_aexp = exec_aexpr(ctx, s, node->as.child.right);
+
+            Interval_Tuple t = interval_backward_minus(ctx, left_aexp, right_aexp, r);
+
+            left_aexp = interval_intersect(ctx, left_aexp, t.a);
+            right_aexp = interval_intersect(ctx, right_aexp, t.b);
+
+            exec_bexp_backprop(ctx, s, left_aexp, node->as.child.left);
+            exec_bexp_backprop(ctx, s, right_aexp, node->as.child.right);
+
+            break;
+        }
+    case NODE_MULT:
+        {
+            Interval left_aexp = exec_aexpr(ctx, s, node->as.child.left);
+            Interval right_aexp = exec_aexpr(ctx, s, node->as.child.right);
+
+            Interval_Tuple t = interval_backward_mult(ctx, left_aexp, right_aexp, r);
+
+            left_aexp = interval_intersect(ctx, left_aexp, t.a);
+            right_aexp = interval_intersect(ctx, right_aexp, t.b);
+
+            exec_bexp_backprop(ctx, s, left_aexp, node->as.child.left);
+            exec_bexp_backprop(ctx, s, right_aexp, node->as.child.right);
+
+            break;
+        }
+    case NODE_DIV:
+        {
+            Interval left_aexp = exec_aexpr(ctx, s, node->as.child.left);
+            Interval right_aexp = exec_aexpr(ctx, s, node->as.child.right);
+
+            Interval_Tuple t = interval_backward_div(ctx, left_aexp, right_aexp, r);
+
+            left_aexp = interval_intersect(ctx, left_aexp, t.a);
+            right_aexp = interval_intersect(ctx, right_aexp, t.b);
+
+            exec_bexp_backprop(ctx, s, left_aexp, node->as.child.left);
+            exec_bexp_backprop(ctx, s, right_aexp, node->as.child.right);
+
+            break;
+        }
+    default:
+        assert(0 && "UNREACHABLE");
+    }
+}
+
+// Exec the Bexp following the Advanced Abstract Tests method proposed in the Minè Tutorial (4.6)
+static Interval *abstract_interval_state_exec_bexp(const Abstract_Interval_Ctx *ctx, const Interval *s, const AST_Node *node) {
+    switch (node->type) {
+    case NODE_EQ:
+    case NODE_LEQ:
+        {
+            // Forward propagration
+            Interval a1 = exec_aexpr(ctx, s, node->as.child.left);
+            Interval a2 = exec_aexpr(ctx, s, node->as.child.right);
+
+            // Do 'a1 - a2' for testing against 'a1 - a2 op 0'
+            Interval sub = interval_minus(ctx, a1, a2);
+
+            // Select the right interval to intersect based on the node type
+            Interval test_value = {0};
+            if (node->type == NODE_LEQ) {
+                // (-INF,0]
+                test_value = (Interval) {
+                    .type = INTERVAL_STD,
+                    .a = INTERVAL_MIN_INF,
+                    .b = 0,
+                };
+            } else {
+                // [0,0]
+                test_value = interval_create(ctx, 0, 0);
+            }
+
+            Interval root = interval_intersect(ctx, sub, test_value);
+
+            // Refine a1 and a2
+            Interval_Tuple t = interval_backward_minus(ctx, a1, a2, root);
+            a1 = t.a;
+            a2 = t.b;
+
+            // Backward propagation
+            Interval *new_s = clone_state(ctx, s);
+            exec_bexp_backprop(ctx, new_s, a1, node->as.child.left);
+            exec_bexp_backprop(ctx, new_s, a2, node->as.child.right);
+
+            return new_s;
+        }
+    case NODE_NOT:
+        // TODO: Eliminate the negation from the bexp and the call itself
+        return clone_state(ctx, s);
+
+    case NODE_AND:
+        {
+            // Exec the two bexp and do the intersection
+            Interval *s1 = abstract_interval_state_exec_bexp(ctx, s, node->as.child.left);
+            Interval *s2 = abstract_interval_state_exec_bexp(ctx, s, node->as.child.right);
+
+            Interval *res = abstract_interval_state_intersect(ctx, s1, s2);
+
+            free(s1);
+            free(s2);
+
+            return res;
         }
     default:
         assert(0 && "UNREACHABLE");
@@ -794,16 +948,7 @@ Interval *abstract_interval_state_exec_command(const Abstract_Interval_Ctx *ctx,
     case NODE_LEQ:
     case NODE_NOT:
     case NODE_AND:
-        // TODO: Advanced abstract tests from Minè Tutorial.
-        // That needs the forward traverse of the tree, but
-        // the intermediate results needs to be saved in the tree.
-        //
-        // Then after applying the condition the backward traverse
-        // is applied, and for that the backward ops are needed (page 227).
-        //
-        // After this, we have a tree with the leaf variable that represents
-        // the filtered states.
-        res = clone_state(ctx, s);
+        res = abstract_interval_state_exec_bexp(ctx, s, command);
         break;
     case NODE_SKIP:
         res = clone_state(ctx, s);
