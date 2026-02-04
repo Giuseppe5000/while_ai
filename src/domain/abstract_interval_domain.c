@@ -946,12 +946,10 @@ static Interval *abstract_interval_state_exec_bexp(const Abstract_Interval_Ctx *
                     // Transform into !b1 OR !b2
                     root->type = NODE_OR;
 
-                    AST_Node *left = xmalloc(sizeof(AST_Node));
-                    left->type = NODE_NOT;
+                    AST_Node *left = create_node(NODE_NOT);
                     left->as.child.left = root->as.child.left;
 
-                    AST_Node *right = xmalloc(sizeof(AST_Node));
-                    right->type = NODE_NOT;
+                    AST_Node *right = create_node(NODE_NOT);
                     right->as.child.left = root->as.child.right;
 
                     root->as.child.left = left;
@@ -963,12 +961,10 @@ static Interval *abstract_interval_state_exec_bexp(const Abstract_Interval_Ctx *
                     // Transform into !b1 AND !b2
                     root->type = NODE_AND;
 
-                    AST_Node *left = xmalloc(sizeof(AST_Node));
-                    left->type = NODE_NOT;
+                    AST_Node *left = create_node(NODE_NOT);
                     left->as.child.left = root->as.child.left;
 
-                    AST_Node *right = xmalloc(sizeof(AST_Node));
-                    right->type = NODE_NOT;
+                    AST_Node *right = create_node(NODE_NOT);
                     right->as.child.left = root->as.child.right;
 
                     root->as.child.left = left;

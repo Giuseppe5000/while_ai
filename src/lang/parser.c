@@ -331,6 +331,8 @@ static AST_Node *parse_bexp(Lexer *lex) {
         and_node->as.child.left = left;
         and_node->as.child.right = parse_atom_bexp(lex);
         left = and_node;
+
+        t = lex_peek(lex);
     }
 
     return left;
