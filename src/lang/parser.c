@@ -166,6 +166,7 @@ AST_Node *parser_copy_node(const AST_Node *node) {
 
 static AST_Node *parse_stmt(Lexer *lex);
 static AST_Node *parse_bexp(Lexer *lex);
+static AST_Node *parse_aexp(Lexer *lex);
 
 static void expect(Token t, enum Token_Type type) {
     if (t.type != type) {
@@ -177,6 +178,13 @@ static void expect(Token t, enum Token_Type type) {
 static AST_Node *parse_factor_aexp(Lexer *lex) {
     Token t = lex_next(lex);
 
+    // OPAR
+    if (t.type == TOKEN_OPAR) {
+        AST_Node *node = parse_aexp(lex);
+        expect(lex_next(lex), TOKEN_CPAR);
+        return node;
+    }
+
     // Numeral
     if (t.type == TOKEN_NUM) {
         AST_Node *num_node = create_node(NODE_NUM);
@@ -185,7 +193,7 @@ static AST_Node *parse_factor_aexp(Lexer *lex) {
         return num_node;
     }
 
-    // Variable (a)
+    // Variable
     if (t.type == TOKEN_VAR) {
         AST_Node *var_node = create_node(NODE_VAR);
         var_node->as.var.name = t.as.str.name;
@@ -194,7 +202,7 @@ static AST_Node *parse_factor_aexp(Lexer *lex) {
         return var_node;
     }
 
-    fprintf(stderr, "[ERROR]: Unexpected token while parsing aexp\n");
+    fprintf(stderr, "[ERROR]: Unexpected token of type %d while parsing aexp\n", t.type);
     exit(1);
 }
 
@@ -251,6 +259,19 @@ static AST_Node *parse_aexp(Lexer *lex) {
 static AST_Node *parse_atom_bexp(Lexer *lex) {
     Token t = lex_peek(lex);
 
+    // OPAR
+    // if (t.type == TOKEN_OPAR) {
+    //     lex_next(lex);
+
+    //     // TODO: Check if parse_bexp is correct
+    //     // Otherwise it must be an aexp
+    //     //
+    //     // For doing this I must return an error code (like NULL) in parse_bexp
+    //     AST_Node *node = parse_bexp(lex);
+    //     expect(lex_next(lex), TOKEN_CPAR);
+    //     return node;
+    // }
+
     // True
     if (t.type == TOKEN_TRUE) {
         lex_next(lex);
@@ -295,7 +316,7 @@ static AST_Node *parse_atom_bexp(Lexer *lex) {
         return leq_node;
     }
 
-    fprintf(stderr, "[ERROR]: Unexpected token while parsing bexp\n");
+    fprintf(stderr, "[ERROR]: Unexpected token of type %d while parsing bexp\n", t.type);
     exit(1);
 }
 
@@ -415,6 +436,14 @@ static AST_Node *parse_stmt(Lexer *lex) {
 
 AST_Node *parser_parse(Lexer *lex) {
     AST_Node *root = parse_stmt(lex);
+
+    // Check if we reached the end
+    Token t = lex_peek(lex);
+    if (t.type != TOKEN_EOF) {
+        fprintf(stderr, "[ERROR]: Expected end of file, but found token of type %d\n", t.type);
+        exit(1);
+    }
+
     return root;
 }
 

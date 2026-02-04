@@ -18,6 +18,8 @@ typedef struct {
 } Keyword_Token;
 
 const Keyword_Token keywords[] = {
+    { .keyword = "("     , .type = TOKEN_OPAR    },
+    { .keyword = ")"     , .type = TOKEN_CPAR    },
     { .keyword = "+"     , .type = TOKEN_PLUS    },
     { .keyword = "-"     , .type = TOKEN_MINUS   },
     { .keyword = "*"     , .type = TOKEN_MULT    },

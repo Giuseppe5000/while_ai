@@ -36,11 +36,11 @@ variables:
 
 arithmetic expressions:
     a ∈ Aexp
-    a ::= n | x | a1 + a2 | a1 - a2 | a1 * a2 | a1 / a2
+    a ::= n | x | a1 + a2 | a1 - a2 | a1 * a2 | a1 / a2 | (a)
 
 boolean expressions:
     b ∈ Bexp
-    b ::= true | false | a1 = a2 | a1 <= a2 | !b | b1 & b2
+    b ::= true | false | a1 = a2 | a1 <= a2 | !b | b1 & b2 | (b)
 
 statements:
     S ∈ Stm
@@ -55,12 +55,10 @@ TODO
 
 - [ ] Test and check correctness of arithmetic ops in the domain.
 - [x] Implement abstract tests in `abstract_interval_state_exec_command` (There is a TODO in the code).
+- [ ] Implement parentheses for bexp
 
 Other things:
 - [ ] Check TODOs in the code.
 - [ ] Check comments.
 - [ ] Styling and const correctness.
 - [ ] Complete README.
-
-
-

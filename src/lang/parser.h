@@ -15,11 +15,11 @@
 //
 // arithmetic expressions:
 //     a ∈ Aexp
-//     a ::= n | x | a1 + a2 | a1 - a2 | a1 * a2 | a1 / a2
+//     a ::= n | x | a1 + a2 | a1 - a2 | a1 * a2 | a1 / a2 | (a)
 //
 // boolean expressions:
 //     b ∈ Bexp
-//     b ::= true | false | a1 = a2 | a1 <= a2 | !b | b1 & b2
+//     b ::= true | false | a1 = a2 | a1 <= a2 | !b | b1 & b2 | (b)
 //
 // statements:
 //     S ∈ Stm

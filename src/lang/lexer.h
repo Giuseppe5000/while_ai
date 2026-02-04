@@ -9,6 +9,8 @@ enum Token_Type {
     TOKEN_EOF,
     TOKEN_NUM,
     TOKEN_VAR,
+    TOKEN_OPAR,
+    TOKEN_CPAR,
 
     // Aexp
     TOKEN_PLUS,
