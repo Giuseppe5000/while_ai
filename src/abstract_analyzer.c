@@ -258,17 +258,7 @@ static Abstract_State *abstract_transfer_union(const While_Analyzer *wa, size_t 
             edge = wa->cfg->nodes[pred].edges[1];
         }
 
-        switch (edge.type) {
-        case EDGE_ASSIGN:
-            states[i] = wa->ops->exec_command(wa->ctx, wa->state[pred], edge.as.assign);
-            break;
-        case EDGE_GUARD:
-            states[i] = wa->ops->exec_command(wa->ctx, wa->state[pred], edge.as.condition);
-            break;
-        case EDGE_SKIP:
-            states[i] = wa->ops->exec_command(wa->ctx, wa->state[pred], edge.as.skip);
-            break;
-        }
+        states[i] = wa->ops->exec_command(wa->ctx, wa->state[pred], edge.command);
     }
 
     // Union of the results

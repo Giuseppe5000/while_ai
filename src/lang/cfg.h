@@ -17,11 +17,7 @@ struct CFG_Edge {
     size_t src; // Node src id
     size_t dst; // Node dst id
     enum Edge_Type type;
-    union {
-        AST_Node *skip;
-        AST_Node *assign;
-        AST_Node *condition;
-    } as; // TODO: union is not needed actually
+    AST_Node *command;
 };
 
 struct CFG_Node{

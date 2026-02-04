@@ -124,9 +124,9 @@ static void build_cfg_impl(CFG *cfg, AST_Node *node, size_t *counter, Pred_Stack
         enum Edge_Type type = node->type == NODE_ASSIGN ? EDGE_ASSIGN : EDGE_SKIP;
         cfg->nodes[*counter].edges[0].type = type;
         if (node->type == NODE_ASSIGN) {
-            cfg->nodes[*counter].edges[0].as.assign = parser_copy_node(node);
+            cfg->nodes[*counter].edges[0].command = parser_copy_node(node);
         } else {
-            cfg->nodes[*counter].edges[0].as.skip = parser_copy_node(node);
+            cfg->nodes[*counter].edges[0].command = parser_copy_node(node);
         }
 
         wire_predecessors(cfg, *counter, preds);
@@ -145,7 +145,7 @@ static void build_cfg_impl(CFG *cfg, AST_Node *node, size_t *counter, Pred_Stack
         cfg->nodes[*counter].edges[0].src = *counter;
         cfg->nodes[*counter].edges[0].dst = -1;
         cfg->nodes[*counter].edges[0].type = EDGE_GUARD;
-        cfg->nodes[*counter].edges[0].as.condition = parser_copy_node(node->as.child.condition);
+        cfg->nodes[*counter].edges[0].command = parser_copy_node(node->as.child.condition);
 
         cfg->nodes[*counter].edges[1].src = *counter;
         cfg->nodes[*counter].edges[1].dst = -1;
@@ -155,7 +155,7 @@ static void build_cfg_impl(CFG *cfg, AST_Node *node, size_t *counter, Pred_Stack
         AST_Node *false_cond = xmalloc(sizeof(AST_Node));
         false_cond->type = NODE_NOT;
         false_cond->as.child.left = parser_copy_node(node->as.child.condition);
-        cfg->nodes[*counter].edges[1].as.condition = false_cond;
+        cfg->nodes[*counter].edges[1].command = false_cond;
 
 
         wire_predecessors(cfg, *counter, preds);
@@ -215,7 +215,7 @@ static void build_cfg_impl(CFG *cfg, AST_Node *node, size_t *counter, Pred_Stack
         cfg->nodes[*counter].edges[0].src = *counter;
         cfg->nodes[*counter].edges[0].dst = -1;
         cfg->nodes[*counter].edges[0].type = EDGE_GUARD;
-        cfg->nodes[*counter].edges[0].as.condition = parser_copy_node(node->as.child.condition);
+        cfg->nodes[*counter].edges[0].command = parser_copy_node(node->as.child.condition);
 
         cfg->nodes[*counter].edges[1].src = *counter;
         cfg->nodes[*counter].edges[1].dst = -1;
@@ -225,7 +225,7 @@ static void build_cfg_impl(CFG *cfg, AST_Node *node, size_t *counter, Pred_Stack
         AST_Node *exit_cond = xmalloc(sizeof(AST_Node));
         exit_cond->type = NODE_NOT;
         exit_cond->as.child.left = parser_copy_node(node->as.child.condition);
-        cfg->nodes[*counter].edges[1].as.condition = exit_cond;
+        cfg->nodes[*counter].edges[1].command = exit_cond;
 
         wire_predecessors(cfg, *counter, preds);
 
@@ -266,12 +266,12 @@ void cfg_print_graphviz(CFG *cfg, FILE *fp) {
             switch (node.edges[j].type) {
             case EDGE_ASSIGN:
                 fprintf(fp, " [label=\"");
-                parser_print_ast(node.edges[j].as.assign, fp);
+                parser_print_ast(node.edges[j].command, fp);
                 fprintf(fp, "\"]\n");
                 break;
             case EDGE_GUARD:
                 fprintf(fp, " [label=\"");
-                parser_print_ast(node.edges[j].as.condition, fp);
+                parser_print_ast(node.edges[j].command, fp);
                 fprintf(fp, "\"]\n");
                 break;
             case EDGE_SKIP:
@@ -299,13 +299,13 @@ void cfg_free(CFG *cfg) {
         for (size_t j = 0; j < node.edge_count; ++j) {
             CFG_Edge edge = node.edges[j];
             if (edge.type == EDGE_ASSIGN) {
-                parser_free_ast_node(edge.as.assign);
+                parser_free_ast_node(edge.command);
             }
             else if (edge.type == EDGE_GUARD) {
-                parser_free_ast_node(edge.as.condition);
+                parser_free_ast_node(edge.command);
             }
             else if (edge.type == EDGE_SKIP) {
-                parser_free_ast_node(edge.as.skip);
+                parser_free_ast_node(edge.command);
             }
         }
 
