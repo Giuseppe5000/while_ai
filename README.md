@@ -63,13 +63,13 @@ statements:
 
 ## References
 
-- Tutorial on Static Inference of Numeric Invariants by Abstract Interpretation (Antoine Miné):
+- Tutorial on Static Inference of Numeric Invariants by Abstract Interpretation (Antoine Miné):\
     https://dl.acm.org/doi/10.1561/2500000034
-- Software Verification course:
+- Software Verification course:\
     https://unipd.coursecatalogue.cineca.it/corsi/2025/2634/insegnamenti/2025/52879_490656_65775/2025/52879
-- Interproc static analyzer:
+- Interproc static analyzer:\
     https://pop-art.inrialpes.fr/people/bjeannet/bjeannet-forge/interproc/index.html
-- Interproc on Docker:
+- Interproc on Docker:\
     https://github.com/Edivad99/interproc-docker
 
 ## TODO
