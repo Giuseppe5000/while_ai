@@ -1028,7 +1028,12 @@ static Interval *abstract_interval_state_exec_assign(const Abstract_Interval_Ctx
 
     // Create the new state and return
     Interval *res = clone_state(ctx, s);
-    res[var_index] = aexpr_res;
+
+    // Update only if it is not Bottom
+    if (res[var_index].type != INTERVAL_BOTTOM) {
+        res[var_index] = aexpr_res;
+    }
+
     return res;
 }
 
