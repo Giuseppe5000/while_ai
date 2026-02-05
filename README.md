@@ -71,16 +71,3 @@ statements:
     https://pop-art.inrialpes.fr/people/bjeannet/bjeannet-forge/interproc/index.html
 - Interproc on Docker:\
     https://github.com/Edivad99/interproc-docker
-
-## TODO
-
-- [x] Test and check correctness of arithmetic ops in the domain.
-- [x] Implement abstract tests in `abstract_interval_state_exec_command` (There is a TODO in the code).
-- [x] Implement parentheses for bexp
-
-Other things:
-- [x] Check TODOs in the code.
-- [ ] Check comments.
-- [x] Styling and const correctness.
-- [x] Add more examples.
-- [ ] Adjust fuzz.py (make it delete the test_case.while if it finish correcly).
